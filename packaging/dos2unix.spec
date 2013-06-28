@@ -6,6 +6,7 @@ Summary:        Text converters to and from DOS/MAC to UNIX
 Url:            http://waterlan.home.xs4all.nl/dos2unix.html
 Group:          Productivity/Text/Convertors
 Source:         http://waterlan.home.xs4all.nl/dos2unix/dos2unix-%{version}.tar.gz
+Source1001: 	dos2unix.manifest
 BuildRequires:  gettext-tools
 Provides:       unix2dos = %{version}
 Obsoletes:      unix2dos < %{version}
@@ -20,6 +21,7 @@ format to DOS format and unix2dos converts from UNIX to MAC format.
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 find . -type f | xargs chmod -x
 
 %build
@@ -31,6 +33,7 @@ make %{?_smp_mflags} CC="gcc" HTMLEXT="html"
 %{find_lang} dos2unix --all-name --with-man
 
 %files -f dos2unix.lang
+%manifest %{name}.manifest
 %defattr(-,root,root,0755)
 %doc /usr/share/doc/%{name}-%{version}
 %{_bindir}/dos2unix
