@@ -1,0 +1,8 @@
+Change-Id: I0a42b2c1aaae30f4d7be437485364853cb0b30c9
+Code-Review+2: Ryan Ware <ware@linux.intel.com>
+Verified+1: Ryan Ware <ware@linux.intel.com>
+Submitted-by: Ryan Ware <ware@linux.intel.com>
+Submitted-at: Mon, 08 Jul 2013 10:06:03 -0700
+Reviewed-on: https://review.tizen.org/gerrit/4622
+Project: platform/upstream/dos2unix
+Branch: refs/heads/tizen
