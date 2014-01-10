@@ -1,9 +1,9 @@
 /*
 #  Copyright and License
 #
-#   Copyright (C) 2009-2012 Erwin Waterlander
+#   Copyright (C) 2009-2013 Erwin Waterlander
 #   All rights reserved.
-# 
+#
 #   Redistribution and use in source and binary forms, with or without
 #   modification, are permitted provided that the following conditions
 #   are met:
@@ -12,7 +12,7 @@
 #   2. Redistributions in binary form must reproduce the above copyright
 #      notice in the documentation and/or other materials provided with
 #      the distribution.
-# 
+#
 #   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY
 #   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 #   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -66,6 +66,10 @@ of two characters: a Carriage Return (CR) followed by a Line Feed (LF). In Unix
 text files a line break is a single character: the Line Feed (LF). In Mac text
 files, prior to Mac OS X, a line break was single Carriage Return (CR)
 character. Nowadays Mac OS uses Unix style (LF) line breaks.
+
+Besides line breaks Dos2unix can also convert the encoding of files. A few
+DOS code pages can be converted to Unix Latin-1. And Windows Unicode (UTF-16)
+files can be converted to Unix Unicode (UTF-8) files.
 
 Binary files are automatically skipped, unless conversion is forced.
 
@@ -177,10 +181,24 @@ New file mode. Convert file INFILE and write output to file OUTFILE.
 File names must be given in pairs and wildcard names should I<not> be
 used or you I<will> lose your files.
 
+The person who starts the conversion in new file (paired) mode will be the owner
+of the converted file. The read/write permissions of the new file will be the
+permissions of the original file minus the umask(1) of the person who runs the
+conversion.
+
 =item B<-o, --oldfile FILE ...>
 
 Old file mode. Convert file FILE and overwrite output to it. The program
-default to run in this mode. Wildcard names may be used.
+defaults to run in this mode. Wildcard names may be used.
+
+In old file (in-place) mode the converted file gets the same owner, group, and
+read/write permissions as the original file. Also when the file is converted by
+another user who has write permissions on the file (e.g. user root).  The
+conversion will be aborted when it is not possible to preserve the original
+values.  Change of owner could mean that the original owner is not able to read
+the file any more. Change of group could be a security risk, the file could be
+made readable for persons for whom it is not intended.  Preservation of owner,
+group, and read/write permissions is only supported on Unix.
 
 =item B<-q, --quiet>
 
@@ -190,6 +208,27 @@ Except when wrong command-line options are used.
 =item B<-s, --safe>
 
 Skip binary files (default).
+
+=item B<-ul, --assume-utf16le>
+
+Assume that the input file format is UTF-16LE.
+
+When there is a Byte Order Mark in the input file the BOM has priority over
+this option.
+
+When you made a wrong assumption (the input file was not in UTF-16LE format) and
+the conversion succeeded, you will get an UTF-8 output file with wrong text.
+You can undo the wrong conversion with iconv(1) by converting the UTF-8 output
+file back to UTF-16LE. This will bring back the original file.
+
+The assumption of UTF-16LE works as a I<conversion mode>. By switching to the default
+I<ascii> mode the UTF-16LE assumption is turned off.
+
+=item B<-ub, --assume-utf16be>
+
+Assume that the input file format is UTF-16BE.
+
+This option works the same as option C<-ul>.
 
 =item B<-F, --follow-symlink>
 
@@ -348,8 +387,7 @@ Dos2unix can only detect if a file is in UTF-16 format if the file has a BOM.
 When an UTF-16 file doesn't have a BOM, dos2unix will see the file as a binary
 file.
 
-Use dos2unix in combination with iconv(1) to convert an UTF-16 file without
-BOM.
+Use option C<-ul> or C<-ub> to convert an UTF-16 file without BOM.
 
 Dos2unix never writes a BOM in the output file, unless you use option C<-m>.
 
@@ -362,9 +400,9 @@ Convert from Windows UTF-16 (with BOM) to Unix UTF-8
 
     dos2unix -n in.txt out.txt
 
-Convert from Windows UTF-16 (without BOM) to Unix UTF-8
+Convert from Windows UTF-16LE (without BOM) to Unix UTF-8
 
-    iconv -f UTF-16 -t UTF-8 in.txt | dos2unix > out.txt
+    dos2unix -ul -n in.txt out.txt
 
 Convert from Unix UTF-8 to Windows UTF-8 with BOM
 

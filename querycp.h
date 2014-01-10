@@ -1,3 +1,3 @@
-/* The code in this file code is Public Domain */
+/* querycp.h is in the public domain */
 
 unsigned short query_con_codepage(void);

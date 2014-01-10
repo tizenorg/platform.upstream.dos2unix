@@ -1,3 +1,27 @@
+2013-12-30: Version 6.0.4
+
+  * New options -ul and -ub to convert UTF-16 files without BOM.
+  * New Russian translation of the messages.
+  * Build 32 bit Windows binaries with Large File Support (LFS)
+    by using mingw-w64 for 32 bit Windows.
+  * When a binary symbol is encountered the value is printed.
+
+2013-01-25: Version 6.0.3
+
+  * Source code compiles with Microsoft Visual C.
+  * Print system error when writing output fails.
+
+2012-09-06: Version 6.0.2
+
+  * The locale encoding detection has been fixed when NLS was disabled.
+  * Print line number when a binary symbol is found.
+  * Updated makefiles for Watcom C, and added a new one for OS/2.
+
+2012-07-25: Version 6.0.1
+
+  * Update Spanish translations.
+  * Update manual.
+
 2012-05-06: Version 6.0
 
   * Conversion of Windows UTF-16 files to Unix UTF-8 files.
@@ -44,7 +68,7 @@
 
   * ISO conversion mode supports same DOS code pages as SunOS dos2unix does:
       CP437 (US), CP850 (Western European), CP860 (Portuguese),
-      CP863 (French Canadian), and CP865 (Nordic). 
+      CP863 (French Canadian), and CP865 (Nordic).
   * ISO conversion mode supports Windows code page CP1252 (Western).
   * SunOS compatible options -ascii, -iso, -7, -437, -850, -860, -863, and -865.
   * Active code page detection for ISO mode.

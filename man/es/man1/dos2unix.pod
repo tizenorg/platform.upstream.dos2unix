@@ -4,9 +4,9 @@
 #
 #  Copyright and License
 #
-#   Copyright (C) 2009-2012 Erwin Waterlander
+#   Copyright (C) 2009-2013 Erwin Waterlander
 #   All rights reserved.
-# 
+#
 #   Redistribution and use in source and binary forms, with or without
 #   modification, are permitted provided that the following conditions
 #   are met:
@@ -15,7 +15,7 @@
 #   2. Redistributions in binary form must reproduce the above copyright
 #      notice in the documentation and/or other materials provided with
 #      the distribution.
-# 
+#
 #   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY
 #   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 #   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -34,7 +34,7 @@
 #       véase el estándar POSIX/Susv y "Utility Description Defaults" en
 #       http://www.opengroup.org/onlinepubs/009695399/utilities/xcu_chap01.html#tag_01_11
 #
-#       Éste es el manual en formato POD de Perl. Lease más en
+#       Éste es el manual en formato POD de Perl. Léase más en
 #       http://perldoc.perl.org/perlpod.html o ejecute el comando:
 #
 #           perldoc perlpod | less
@@ -70,6 +70,11 @@ por un salto de línea (LF). En archivos de texto Unix, un salto de línea es
 solamente un carácter: el salto de línea (LF). En archivos de texto Mac, antes
 de Mac OS X, un salto de línea era sólo un carácter retorno de carro (CR).
 Actualmente, Mac OS usa el estilo Unix de saltos de línea (LF).
+
+Además de saltos de línea, Dos2unix puede también convertir la
+codificación de archivos. Unas cuantas páginas de códigos DOS pueden ser
+convertidas a Unix Latin-1. Y archivos Unicode de Windows (UTF-16) pueden ser
+convertidos a archivos Unicode de Unix (UTF-8).
 
 Los archivos binarios son ignorados automáticamente, a menos que se fuerce su
 conversión.
@@ -177,8 +182,8 @@ En modo Mac los saltos de línea Unix son cambiados por dos saltos de línea Mac.
 
 =item B<-m, --add-bom>
 
-Write an UTF-8 Byte Order Mark in the output file. Never use this option when
-the output encoding is other than UTF-8. See also section UNICODE.
+Escribe una marca de orden de bytes para UTF-8 en el archivo de salida. Nunca use esta opción cuando
+la codificación de salida sea distinta de UTF-8. Véase también la sección UNICODE.
 
 =item B<-n, --newfile ARCH_DE_ENTRADA ARCH_DE_SALIDA ...>
 
@@ -187,10 +192,27 @@ al archivo ARCH_DE_SALIDA.
 Los nombres de archivo deben ser dados en pares y los comodines I<no> deben ser
 usados o I<perderá> sus archivos.
 
+La persona que inicia la conversión en el modo de archivo nuevo
+(pareado) será el propietario del archivo convertido.  Los permisos de
+lectura/escritura del archivo nuevo serán los permisos del archivo
+original menos la umask(1) de la persona que ejecute la conversión.
+
 =item B<-o, --oldfile ARCHIVO ...>
 
 Modo de archivo viejo. Convierte el archivo ARCHIVO y lo sobrescribe con la salida.
 El programa por defecto se ejecuta en este modo. Sí se pueden emplear comodines.
+
+En modo de archivo antiguo (in situ), el archivo convertido obtiene el
+mismo propietario, grupo, y permisos de lectura/escritura que el
+archivo original.  Lo mismo aplica cuando el archivo es convertido por
+otro usuario quien tiene permiso de lectura en el archivo (p.e. usuario
+root).  La conversión será abortada cuando no sea posible preservar
+los valores originales.  Cambiar el propietario implicaría que el
+propietario original ya no podrá leer el archivo. Cambiar el grupo
+podría ser un riesgo de seguridad, ya que el archivo podría ser
+accesible a personas inadecuadas.  La preservación del propietario,
+grupo, y permisos de lectura/escritura sólo está soportada bajo Unix.
+
 
 =item B<-q, --quiet>
 
@@ -200,6 +222,30 @@ es cero. Excepto cuando se emplean parámetros incorrectos.
 =item B<-s, --safe>
 
 Ignora los archivos binarios (por defecto).
+
+=item B<-ul, --assume-utf16le>
+
+Supone que el formato de archivo de entrada es UTF-16LE.
+
+Cuando existe una marca de orden de bytes (BOM) en el archivo de
+entrada, la BOM tiene prioridad sobre esta opción.
+
+Cuando se hace un supuesto incorrecto (el archivo de entrada no estaba
+en formato UTF-16LE) y la conversión tiene éxito, obtendrá un archivo
+UTF-8 de salida con el texto erróneo.
+
+La conversión errónea puede ser deshecha con iconv(1) mediante convertir
+el archivo UTF-8 de salida de vuelta a UTF-16LE. Esto restaurará el
+archivo original.
+
+El supuesto de UTF-16LE funciona como un I<modo de conversión>. Al
+cambiar al modo por defecto I<ascii> el supuesto UTF-16LE es deshabilitado.
+
+=item B<-ub, --assume-utf16be>
+
+Supone que el formato del archivo de entrada es UTF-16BE.
+
+Esta opción funciona igual que la opción C<-ul>.
 
 =item B<-F, --follow-symlink>
 
@@ -269,7 +315,8 @@ C<-863> (Francocanadiense), o C<-865> (Nórdico). La página de códigos Windows
 acceder a otras páginas de códigos use dos2unix en combinación con iconv(1).
 Iconv puede convertir entre una larga lista de codificaciones de caracteres.
 
-Never use ISO converion on Unicode text files. It will corrupt UTF-8 encoded files.
+Nunca emplee la conversión ISO en archivos de texto Unicode. Esto corromperá
+los archivos codificados como UTF-8.
 
 Algunos ejemplos:
 
@@ -312,76 +359,81 @@ y L<http://czyborra.com/charsets/iso8859.html>.
 
 =head1 UNICODE
 
-=head2 Encodings
+=head2 Codificaciones
 
-There exist different Unicode encodings. On Unix and Linux Unicode files are
-typically encoded in UTF-8 encoding. On Windows Unicode text files can be
-encoded in UTF-8, UTF-16, or UTF-16 big endian, but are mostly encoded in
-UTF-16 format.
+Existen diferentes codificaciones Unicode. En Unix y Linux los archivos Unicode
+son codificados comúnmente como UTF-8. En Windows los archivos de texto Unicode
+pueden estar codificados en UTF-8, UTF-16, o UTF-16 big endian, pero con más
+frecuencia son codificados en formato UTF-16.
 
 =head2 Conversion
 
-Unicode text files can have DOS, Unix or Mac line breaks, like regular text
-files.
+Los archivos de texto Unicode pueden tener saltos de línea DOS, Unix o Mac, como
+cualquier archivo de texto.
 
-All versions of dos2unix and unix2dos can convert UTF-8 encoded files, because
-UTF-8 was designed for backward compatiblity with ASCII.
+Todas las versiones de dos2unix y unix2dos pueden convertir archivos codificados
+como UTF-8, debido a que UTF-8 fue diseñado para retro-compatibilidad con ASCII.
 
-Dos2unix and unix2dos with Unicode UTF-16 support, can read little and big
-endian UTF-16 encoded text files. To see if dos2unix was built with UTF-16
-support type C<dos2unix -V>.
+Dos2unix y unix2dos con soporte Unicode UTF-16, pueden leer archivos de texto
+codificados como UTF-16 little y big endian. Para ver si dos2unix fue compilado con
+soporte UTF-16 escriba C<dos2unix -V>.
 
-The Windows versions of dos2unix and unix2dos convert UTF-16 encoded files
-always to UTF-8 encoded files. Unix versions of dos2unix/unix2dos convert
-UTF-16 encoded files to the locale character encoding when it is set to UTF-8.
-Use the locale(1) command to find out what the locale character encoding is.
+Las versiones Windows de dos2unix y unix2dos siempre convierten archivos
+Codificados como UTF-16 a UTF-8. Las versiones Unix de dos2unix/unix2dos
+convierten archivos UTF-16 a la codificación de caracteres local cuando es
+configurado a UTF-8.
+Emplee el comando locale(1) para determinar cual es la codificación de caracteres
+local.
 
-Because UTF-8 formatted text files are well supported on both Windows and Unix,
-dos2unix and unix2dos have no option to write UTF-16 files. All UTF-16
-characters can be encoded in UTF-8. Conversion from UTF-16 to UTF-8 is without
-loss. UTF-16 files will be skipped on Unix when the locale character encoding
-is not UTF-8, to prevent accidental loss of text. When an UTF-16 to UTF-8
-conversion error occurs, for instance when the UTF-16 input file contains
-an error, the file will be skipped.
+Dado que los archivos de texto formateados UTF-8 son bien soportados tanto en
+Windows como en Unix, dos2unix y unix2dos no tienen opción para escribir
+archivos UTF-16. Todos los caracteres UTF-16 pueden ser codificados en
+UTF-8. La conversión de UTF-16 a UTF-8 ocurre sin pérdida. Los archivos
+UTF-16 serán ignorados en Unix cuando la codificación de caracteres local no
+sea UTF-8, para evitar la pérdida accidental de texto. Cuando ocurre un error
+de conversión de UTF-16 a UTF-8, por ejemplo cuando el archivo de entrada
+UTF-16 contiene un error, el archivo será ignorado.
 
-ISO and 7-bit mode conversion do not work on UTF-16 files.
+La conversión en modos ISO y 7-bit no funciona en archivos UTF-16.
 
-=head2 Byte Order Mark
+=head2 Marca de orden de bytes
 
-On Windows Unicode text files typically have a Byte Order Mark (BOM), because
-many Windows programs (including Notepad) add BOMs by default. See also
-L<http://en.wikipedia.org/wiki/Byte_order_mark>.
+En Windows los archivos de texto Unicode típicamente tienen una marca de orden de
+bytes (BOM), debido a que muchos programas de Windows (incluyendo el Bloc de notas)
+añaden una BOM por defecto. Véase también
+L<http://es.wikipedia.org/wiki/Marca_de_orden_de_bytes_%28BOM%29>.
 
-On Unix Unicode files typically don't have a BOM. It is assumed that text files
-are encoded in the locale character encoding.
+En Unix los archivos Unicode típicamente no tienen una BOM. Se supone que los archivos
+de texto son codificados en la codificación de caracteres local.
 
-Dos2unix can only detect if a file is in UTF-16 format if the file has a BOM.
-When an UTF-16 file doesn't have a BOM, dos2unix will see the file as a binary
-file.
+Dos2unix sólo puede detectar si un archivo está en formato UTF-16 si el archivo
+tiene una BOM.
+Cuando un archivo UTF-16 no tiene una BOM, dos2unix tratará el archivo como un
+archivo binario.
 
-Use dos2unix in combination with iconv(1) to convert an UTF-16 file without
-BOM.
+Emplee la opción C<-ul> o C<-ub> para convertir un archivo UTF-16 sin BOM.
 
-Dos2unix never writes a BOM in the output file, unless you use option C<-m>.
+Dos2unix nunca escribe una BOM en el archivo de salida, a menos que emplee la
+opción C<-m>.
 
-Unix2dos writes a BOM in the output file when the input file has a BOM, or
-when option C<-m> is used.
+Unix2dos escribe una BOM en el archivo de salida cuando el archivo de entrada tiene
+una BOM, o cuando se emplea la opción C<-m>.
 
-=head2 Unicode examples
+=head2 Ejemplos Unicode
 
-Convert from Windows UTF-16 (with BOM) to Unix UTF-8
+Convertir de Windows UTF-16 (con una BOM) a Unix UTF-8
 
     dos2unix -n in.txt out.txt
 
-Convert from Windows UTF-16 (without BOM) to Unix UTF-8
+Convertir de Windows UTF-16LE (sin una BOM) a Unix UTF-8
 
-    iconv -f UTF-16 -t UTF-8 in.txt | dos2unix > out.txt
+    dos2unix -ul -n in.txt out.txt
 
-Convert from Unix UTF-8 to Windows UTF-8 with BOM
+Convertir de Unix UTF-8 a Windows UTF-8 sin una BOM
 
     unix2dos -m -n in.txt out.txt
 
-Convert from Unix UTF-8 to Windows UTF-16
+Convertir de Unix UTF-8 a Windows UTF-16
 
     unix2dos < in.txt | iconv -f UTF-8 -t UTF-16 > out.txt
 
@@ -442,11 +494,12 @@ Convierte y reemplaza b.txt. Convierte d.txt y escribe a f.txt.
 
     dos2unix -n c.txt e.txt -o a.txt b.txt -n d.txt f.txt
 
-=head1 RECURSIVE CONVERSION
+=head1 CONVERSIÓN RECURSIVA
 
-Use dos2unix in combination with the find(1) and xargs(1) commands to
-recursively convert text files in a directory tree structure. For instance to
-convert all .txt files in the directory tree under the current directory type:
+Emplee dos2unix en combinación con los comandos find(1) y xargs(1) para
+convertir recursivamente archivos de texto contenidos en un árbol de directorios.
+Por ejemplo para convertir todos los archivos .txt en el árbol de directorios debajo
+del directorio actual escriba:
 
     find . -name *.txt |xargs dos2unix
 
@@ -508,8 +561,8 @@ Ejemplo (intérprete de comandos POSIX):
 =head1 VALOR DE RETORNO
 
 Se regresa cero cuando el programa termina exitosamente. Cuando ocurre un error
-del sistema se regresará el último número de error del sistema. Para otros errores se
-regresa 1.
+del sistema se regresará el último número de error del sistema. Para otros errores
+se regresa 1.
 
 El valor de retorno es siempre cero en modo silencioso, excepto cuando se
 emplean parámetros incorrectos.
@@ -535,7 +588,7 @@ Página del proyecto: L<http://waterlan.home.xs4all.nl/dos2unix.html>
 
 Página de SourceForge: L<http://sourceforge.net/projects/dos2unix/>
 
-Freshmeat: L<http://freshmeat.net/projects/dos2unix>
+Freecode: L<http://freecode.com/projects/dos2unix>
 
 =head1 VÉASE TAMBIÉN
 

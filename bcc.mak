@@ -1,7 +1,7 @@
 !include version.mk
 
 CC      = bcc
-DEFINES = -DMSDOS -DVER_REVISION="$(DOS2UNIX_VERSION)" -DVER_DATE="$(DOS2UNIX_DATE)"
+DEFINES = -DVER_REVISION="$(DOS2UNIX_VERSION)" -DVER_DATE="$(DOS2UNIX_DATE)"
 CFLAGS  = $(DEFINES) -Z -O -w -mc -1
 WILDARGS = c:/bc4/lib/16bit/wildargs.obj
 

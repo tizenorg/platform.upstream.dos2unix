@@ -1,10 +1,10 @@
-/* The code in this file is Public Domain */
+/* querycp.c is in the public domain */
 
 #if (defined(__WATCOMC__) && defined(__NT__))
-#  define WIN32
+#  define _WIN32 1
 #endif
 
-#ifdef DJGPP
+#ifdef __DJGPP__
 
 #include <dpmi.h>
 #include <go32.h>
@@ -145,7 +145,7 @@ unsigned short query_con_codepage(void) {
 }
 
 
-#elif defined (WIN32) && !defined(__CYGWIN__) /* Windows, not Cygwin */
+#elif defined (_WIN32) && !defined(__CYGWIN__) /* Windows, not Cygwin */
 
 /* Erwin Waterlander */
 

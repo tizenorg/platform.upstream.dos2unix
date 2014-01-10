@@ -6,8 +6,8 @@
  *  The dos2unix package is distributed under FreeBSD style license.
  *  See also http://www.freebsd.org/copyright/freebsd-license.html
  *  --------
- * 
- *  Copyright (C) 2009-2012 Erwin Waterlander
+ *
+ *  Copyright (C) 2009-2013 Erwin Waterlander
  *  Copyright (C) 1998 Christian Wurll
  *  Copyright (C) 1998 Bernd Johannes Wuebben
  *  Copyright (C) 1994-1995 Benjamin Lin.
@@ -49,12 +49,12 @@
  *
  * Added Mac text file translation, i.e. \r to \n conversion
  * Bernd Johannes Wuebben, wuebben@kde.org
- * Wed Feb  4 19:12:58 EST 1998      
+ * Wed Feb  4 19:12:58 EST 1998
  *
  * Added extra newline if ^M occurs
  * Christian Wurll, wurll@ira.uka.de
- * Thu Nov 19 1998 
- * 
+ * Thu Nov 19 1998
+ *
  *  See ChangeLog.txt for complete version history.
  *
  */
@@ -66,7 +66,7 @@
 #include "dos2unix.h"
 #include "querycp.h"
 #ifdef D2U_UNICODE
-#ifndef MSDOS  /* Unix, Cygwin */
+#if !defined(__MSDOS__) && !defined(_WIN32) && !defined(__OS2__)  /* Unix, Cygwin */
 # include <langinfo.h>
 #endif
 #endif
@@ -74,7 +74,7 @@
 void PrintLicense(void)
 {
   fprintf(stderr, "%s", _("\
-Copyright (C) 2009-2012 Erwin Waterlander\n\
+Copyright (C) 2009-2013 Erwin Waterlander\n\
 Copyright (C) 1998      Christian Wurll (Version 3.1)\n\
 Copyright (C) 1998      Bernd Johannes Wuebben (Version 3.0)\n\
 Copyright (C) 1994-1995 Benjamin Lin\n\
@@ -134,6 +134,8 @@ int ConvertDosToUnixW(FILE* ipInF, FILE* ipOutF, CFlag *ipFlag, char *progname)
     int RetVal = 0;
     wint_t TempChar;
     wint_t TempNextChar;
+    int line_nr = 1;
+    char *errstr;
 
     ipFlag->status = 0;
 
@@ -156,21 +158,29 @@ int ConvertDosToUnixW(FILE* ipInF, FILE* ipOutF, CFlag *ipFlag, char *progname)
               (TempChar != 0x0c)) {  /* Not a form feed */
             RetVal = -1;
             ipFlag->status |= BINARY_FILE ;
+            if (!ipFlag->Quiet)
+            {
+              fprintf(stderr, "%s: ", progname);
+              fprintf(stderr, _("Binary symbol 0x00%02X found at line %d\n"),TempChar, line_nr);
+            }
             break;
           }
           if (TempChar != 0x0d) {
+            if (TempChar == 0x0a) /* Count all DOS and Unix line breaks */
+              ++line_nr;
             if (d2u_putwc(TempChar, ipOutF, ipFlag) == WEOF) {
               RetVal = -1;
               if (!ipFlag->Quiet)
               {
                 if (!(ipFlag->status & UNICODE_CONVERSION_ERROR))
                 {
+                  errstr = strerror(errno);
                   fprintf(stderr, "%s: ", progname);
-                  fprintf(stderr, "%s", _("can not write to output file\n"));
+                  fprintf(stderr, _("can not write to output file: %s\n"), errstr);
                 }
               }
               break;
-            } 
+            }
           } else {
             StripDelimiterW( ipInF, ipOutF, ipFlag, TempChar );
           }
@@ -186,18 +196,26 @@ int ConvertDosToUnixW(FILE* ipInF, FILE* ipOutF, CFlag *ipFlag, char *progname)
               (TempChar != 0x0c)) {  /* Not a form feed */
             RetVal = -1;
             ipFlag->status |= BINARY_FILE ;
+            if (!ipFlag->Quiet)
+            {
+              fprintf(stderr, "%s: ", progname);
+              fprintf(stderr, _("Binary symbol 0x00%02X found at line %d\n"),TempChar, line_nr);
+            }
             break;
           }
           if ((TempChar != 0x0d))
             {
+              if (TempChar == 0x0a) /* Count all DOS and Unix line breaks */
+                ++line_nr;
               if(d2u_putwc(TempChar, ipOutF, ipFlag) == WEOF){
                 RetVal = -1;
                 if (!ipFlag->Quiet)
                 {
                   if (!(ipFlag->status & UNICODE_CONVERSION_ERROR))
                   {
+                    errstr = strerror(errno);
                     fprintf(stderr, "%s: ", progname);
-                    fprintf(stderr, "%s", _("can not write to output file\n"));
+                    fprintf(stderr, _("can not write to output file: %s\n"), errstr);
                   }
                 }
                 break;
@@ -220,12 +238,14 @@ int ConvertDosToUnixW(FILE* ipInF, FILE* ipOutF, CFlag *ipFlag, char *progname)
                 {
                   if (!(ipFlag->status & UNICODE_CONVERSION_ERROR))
                   {
+                    errstr = strerror(errno);
                     fprintf(stderr, "%s: ", progname);
-                    fprintf(stderr, "%s", _("can not write to output file\n"));
+                    fprintf(stderr, _("can not write to output file: %s\n"), errstr);
                   }
                 }
                 break;
               }
+            line_nr++; /* Count all Mac line breaks */
             if (ipFlag->NewLine) {  /* add additional LF? */
               d2u_putwc(0x0a, ipOutF, ipFlag);
             }
@@ -254,12 +274,16 @@ int ConvertDosToUnix(FILE* ipInF, FILE* ipOutF, CFlag *ipFlag, char *progname)
     int TempChar;
     int TempNextChar;
     int *ConvTable;
+    int line_nr = 1;
+    char *errstr;
 
     ipFlag->status = 0;
 
     switch (ipFlag->ConvMode)
     {
       case CONVMODE_ASCII: /* ascii */
+      case CONVMODE_UTF16LE: /* Assume UTF-16LE */
+      case CONVMODE_UTF16BE: /* Assume UTF-16BE */
         ConvTable = D2UAsciiTable;
         break;
       case CONVMODE_7BIT: /* 7bit */
@@ -312,18 +336,26 @@ int ConvertDosToUnix(FILE* ipInF, FILE* ipOutF, CFlag *ipFlag, char *progname)
               (TempChar != '\x0c')) {  /* Not a form feed */
             RetVal = -1;
             ipFlag->status |= BINARY_FILE ;
+            if (!ipFlag->Quiet)
+            {
+              fprintf(stderr, "%s: ", progname);
+              fprintf(stderr, _("Binary symbol 0x%02X found at line %d\n"),TempChar, line_nr);
+            }
             break;
           }
           if (TempChar != '\x0d') {
+            if (TempChar == '\x0a') /* Count all DOS and Unix line breaks */
+              ++line_nr;
             if (fputc(ConvTable[TempChar], ipOutF) == EOF) {
               RetVal = -1;
               if (!ipFlag->Quiet)
               {
+                errstr = strerror(errno);
                 fprintf(stderr, "%s: ", progname);
-                fprintf(stderr, "%s", _("can not write to output file\n"));
+                fprintf(stderr, _("can not write to output file: %s\n"), errstr);
               }
               break;
-            } 
+            }
           } else {
             StripDelimiter( ipInF, ipOutF, ipFlag, TempChar );
           }
@@ -339,16 +371,24 @@ int ConvertDosToUnix(FILE* ipInF, FILE* ipOutF, CFlag *ipFlag, char *progname)
               (TempChar != '\x0c')) {  /* Not a form feed */
             RetVal = -1;
             ipFlag->status |= BINARY_FILE ;
+            if (!ipFlag->Quiet)
+            {
+              fprintf(stderr, "%s: ", progname);
+              fprintf(stderr, _("Binary symbol 0x%02X found at line %d\n"),TempChar, line_nr);
+            }
             break;
           }
           if ((TempChar != '\x0d'))
             {
+              if (TempChar == '\x0a') /* Count all DOS and Unix line breaks */
+                ++line_nr;
               if(fputc(ConvTable[TempChar], ipOutF) == EOF){
                 RetVal = -1;
                 if (!ipFlag->Quiet)
                 {
+                  errstr = strerror(errno);
                   fprintf(stderr, "%s: ", progname);
-                  fprintf(stderr, "%s", _("can not write to output file\n"));
+                  fprintf(stderr, _("can not write to output file: %s\n"), errstr);
                 }
                 break;
               }
@@ -368,11 +408,13 @@ int ConvertDosToUnix(FILE* ipInF, FILE* ipOutF, CFlag *ipFlag, char *progname)
                 RetVal = -1;
                 if (!ipFlag->Quiet)
                 {
+                  errstr = strerror(errno);
                   fprintf(stderr, "%s: ", progname);
-                  fprintf(stderr, "%s", _("can not write to output file\n"));
+                  fprintf(stderr, _("can not write to output file: %s\n"), errstr);
                 }
                 break;
               }
+            line_nr++; /* Count all Mac line breaks */
             if (ipFlag->NewLine) {  /* add additional LF? */
               fputc('\x0a', ipOutF);
             }
@@ -460,7 +502,7 @@ int ConvertDosToUnixNewFile(char *ipInFN, char *ipOutFN, CFlag *ipFlag, char *pr
     }
     RetVal = -1;
   }
-  
+
 #ifdef NO_MKSTEMP
   if((fd = MakeTempFileFrom(ipOutFN, &TempPath))==NULL) {
 #else
@@ -514,9 +556,15 @@ int ConvertDosToUnixNewFile(char *ipInFN, char *ipOutFN, CFlag *ipFlag, char *pr
   }
 
   InF = read_bom(InF, &ipFlag->bomtype);
+#ifdef D2U_UNICODE
+  if ((ipFlag->bomtype == FILE_MBS) && (ipFlag->ConvMode == CONVMODE_UTF16LE))
+    ipFlag->bomtype = FILE_UTF16LE;
+  if ((ipFlag->bomtype == FILE_MBS) && (ipFlag->ConvMode == CONVMODE_UTF16BE))
+    ipFlag->bomtype = FILE_UTF16BE;
+#endif
 
 #ifdef D2U_UNICODE
-#ifndef MSDOS  /* Unix, Cygwin */
+#if !defined(__MSDOS__) && !defined(_WIN32) && !defined(__OS2__)  /* Unix, Cygwin */
   if ((ipFlag->bomtype == FILE_UTF16LE) || (ipFlag->bomtype == FILE_UTF16BE))
   {
     if (strcmp(nl_langinfo(CODESET), "UTF-8") != 0)
@@ -529,7 +577,7 @@ int ConvertDosToUnixNewFile(char *ipInFN, char *ipOutFN, CFlag *ipFlag, char *pr
     }
   }
 #endif
-#if !defined(WIN32) && !defined(__CYGWIN__) /* Not Windows or Cygwin */
+#if !defined(_WIN32) && !defined(__CYGWIN__) /* Not Windows or Cygwin */
   if ((ipFlag->bomtype == FILE_UTF16LE) || (ipFlag->bomtype == FILE_UTF16BE))
   {
     if (sizeof(wchar_t) < 4)
@@ -547,7 +595,8 @@ int ConvertDosToUnixNewFile(char *ipInFN, char *ipOutFN, CFlag *ipFlag, char *pr
     fprintf(TempF, "%s", "\xEF\xBB\xBF");  /* UTF-8 BOM */
 
   /* Turn off ISO and 7-bit conversion for Unicode text files */
-  if (ipFlag->bomtype > 0)
+  /* When we assume UTF16, don't change the conversion mode. We need to remember it. */
+  if ((ipFlag->bomtype > 0) && (ipFlag->ConvMode != CONVMODE_UTF16LE) && (ipFlag->ConvMode != CONVMODE_UTF16BE))
     ipFlag->ConvMode = CONVMODE_ASCII;
 
   /* conversion sucessful? */
@@ -575,8 +624,20 @@ int ConvertDosToUnixNewFile(char *ipInFN, char *ipOutFN, CFlag *ipFlag, char *pr
     RetVal = -1;
 
   /* can close output file? */
-  if ((TempF) && (fclose(TempF) == EOF))
-    RetVal = -1;
+  if (TempF)
+  {
+    if (fclose(TempF) == EOF)
+    {
+       if (!ipFlag->Quiet)
+       {
+         ipFlag->error = errno;
+         errstr = strerror(errno);
+         fprintf(stderr, "%s: ", progname);
+         fprintf(stderr, _("Failed to write to temporary output file %s: %s\n"), TempPath, errstr);
+       }
+      RetVal = -1;
+    }
+  }
 
 #ifdef NO_MKSTEMP
   if(fd!=NULL)
@@ -592,14 +653,14 @@ int ConvertDosToUnixNewFile(char *ipInFN, char *ipOutFN, CFlag *ipFlag, char *pr
     if (ipFlag->NewFile == 0) /* old file mode */
     {
        RetVal = chmod (TempPath, StatBuf.st_mode); /* set original permissions */
-    } 
+    }
     else
     {
        mask = umask(0); /* get process's umask */
        umask(mask); /* set umask back to original */
        RetVal = chmod(TempPath, StatBuf.st_mode & ~mask); /* set original permissions, minus umask */
     }
-    
+
     if (RetVal)
     {
        if (!ipFlag->Quiet)
@@ -737,24 +798,30 @@ int ConvertDosToUnixStdio(CFlag *ipFlag, char *progname)
     ipFlag->KeepDate = 0;
     ipFlag->Force = 1;
 
-#if defined(WIN32) && !defined(__CYGWIN__)
+#if defined(_WIN32) && !defined(__CYGWIN__)
 
     /* stdin and stdout are by default text streams. We need
      * to set them to binary mode. Otherwise an LF will
      * automatically be converted to CR-LF on DOS/Windows.
      * Erwin */
 
-    /* 'setmode' was deprecated by MicroSoft
-     * since Visual C++ 2005. Use '_setmode' instead. */
+    /* POSIX 'setmode' was deprecated by MicroSoft since
+     * Visual C++ 2005. Use ISO C++ conformant '_setmode' instead. */
 
-    _setmode(fileno(stdout), O_BINARY);
-    _setmode(fileno(stdin), O_BINARY);
-#elif defined(MSDOS) || defined(__CYGWIN__) || defined(__OS2__)
+    _setmode(_fileno(stdout), _O_BINARY);
+    _setmode(_fileno(stdin), _O_BINARY);
+#elif defined(__MSDOS__) || defined(__CYGWIN__) || defined(__OS2__)
     setmode(fileno(stdout), O_BINARY);
     setmode(fileno(stdin), O_BINARY);
 #endif
 
     read_bom(stdin, &ipFlag->bomtype);
+#ifdef D2U_UNICODE
+    if ((ipFlag->bomtype == FILE_MBS) && (ipFlag->ConvMode == CONVMODE_UTF16LE))
+      ipFlag->bomtype = FILE_UTF16LE;
+    if ((ipFlag->bomtype == FILE_MBS) && (ipFlag->ConvMode == CONVMODE_UTF16BE))
+      ipFlag->bomtype = FILE_UTF16BE;
+#endif
 
     if (ipFlag->add_bom)
        fprintf(stdout, "%s", "\xEF\xBB\xBF");  /* UTF-8 BOM */
@@ -808,8 +875,14 @@ int main (int argc, char *argv[])
          strcpy(localedir,LOCALEDIR);
       }
    }
+#endif
 
+#if defined(ENABLE_NLS) || (defined(D2U_UNICODE) && !defined(__MSDOS__) && !defined(_WIN32) && !defined(__OS2__))
+/* setlocale() is also needed for nl_langinfo() */
    setlocale (LC_ALL, "");
+#endif
+
+#ifdef ENABLE_NLS
    bindtextdomain (PACKAGE, localedir);
    textdomain (PACKAGE);
 #endif
@@ -819,7 +892,7 @@ int main (int argc, char *argv[])
   ArgIdx = 0;
   CanSwitchFileMode = 1;
   ShouldExit = 0;
-  pFlag = (CFlag*)malloc(sizeof(CFlag));  
+  pFlag = (CFlag*)malloc(sizeof(CFlag));
   pFlag->NewFile = 0;
   pFlag->Quiet = 0;
   pFlag->KeepDate = 0;
@@ -918,6 +991,12 @@ int main (int argc, char *argv[])
         pFlag->ConvMode = CONVMODE_865;
       else if (strcmp(argv[ArgIdx],"-1252") == 0)
         pFlag->ConvMode = CONVMODE_1252;
+#ifdef D2U_UNICODE
+      else if ((strcmp(argv[ArgIdx],"-ul") == 0) || (strcmp(argv[ArgIdx],"--assume-utf16le") == 0))
+        pFlag->ConvMode = CONVMODE_UTF16LE;
+      else if ((strcmp(argv[ArgIdx],"-ub") == 0) || (strcmp(argv[ArgIdx],"--assume-utf16be") == 0))
+        pFlag->ConvMode = CONVMODE_UTF16BE;
+#endif
       else if ((strcmp(argv[ArgIdx],"-c") == 0) || (strcmp(argv[ArgIdx],"--convmode") == 0))
       {
         if (++ArgIdx < argc)

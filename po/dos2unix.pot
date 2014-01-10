@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-06 12:13+0200\n"
+"POT-Creation-Date: 2013-11-26 23:08+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,7 @@ msgstr ""
 
 #: dos2unix.c:76
 msgid ""
-"Copyright (C) 2009-2012 Erwin Waterlander\n"
+"Copyright (C) 2009-2013 Erwin Waterlander\n"
 "Copyright (C) 1998      Christian Wurll (Version 3.1)\n"
 "Copyright (C) 1998      Bernd Johannes Wuebben (Version 3.0)\n"
 "Copyright (C) 1994-1995 Benjamin Lin\n"
@@ -27,188 +27,204 @@ msgid ""
 "\n"
 msgstr ""
 
-#: dos2unix.c:169 dos2unix.c:200 dos2unix.c:224 dos2unix.c:323 dos2unix.c:351
-#: dos2unix.c:372 unix2dos.c:152 unix2dos.c:183 unix2dos.c:202 unix2dos.c:219
-#: unix2dos.c:331 unix2dos.c:359 unix2dos.c:375 unix2dos.c:389
-msgid "can not write to output file\n"
+#: dos2unix.c:164 dos2unix.c:202 unix2dos.c:132 unix2dos.c:185
+#, c-format
+msgid "Binary symbol 0x00%02X found at line %d\n"
 msgstr ""
 
-#: dos2unix.c:239 dos2unix.c:386 unix2dos.c:234 unix2dos.c:403
+#: dos2unix.c:179 dos2unix.c:218 dos2unix.c:243 dos2unix.c:355 dos2unix.c:391
+#: dos2unix.c:413 unix2dos.c:162 unix2dos.c:199 unix2dos.c:220 unix2dos.c:238
+#: unix2dos.c:362 unix2dos.c:396 unix2dos.c:414 unix2dos.c:429
+#, c-format
+msgid "can not write to output file: %s\n"
+msgstr ""
+
+#: dos2unix.c:259 dos2unix.c:428 unix2dos.c:253 unix2dos.c:443
 #, c-format
 msgid "program error, invalid conversion mode %d\n"
 msgstr ""
 
-#: dos2unix.c:293 unix2dos.c:288
+#: dos2unix.c:317 unix2dos.c:311
 #, c-format
 msgid "using code page %d.\n"
 msgstr ""
 
-#: dos2unix.c:474 unix2dos.c:491
+#: dos2unix.c:342 dos2unix.c:377 unix2dos.c:334 unix2dos.c:384
+#, c-format
+msgid "Binary symbol 0x%02X found at line %d\n"
+msgstr ""
+
+#: dos2unix.c:516 unix2dos.c:531
 #, c-format
 msgid "Failed to open temporary output file: %s\n"
 msgstr ""
 
-#: dos2unix.c:481 unix2dos.c:498
+#: dos2unix.c:523 unix2dos.c:538
 #, c-format
 msgid "using %s as temporary file\n"
 msgstr ""
 
-#: dos2unix.c:610 unix2dos.c:627
+#: dos2unix.c:636 unix2dos.c:651
+#, c-format
+msgid "Failed to write to temporary output file %s: %s\n"
+msgstr ""
+
+#: dos2unix.c:671 unix2dos.c:686
 #, c-format
 msgid "Failed to change the permissions of temporary output file %s: %s\n"
 msgstr ""
 
-#: dos2unix.c:629 unix2dos.c:646
+#: dos2unix.c:690 unix2dos.c:705
 #, c-format
 msgid "Failed to change the owner and group of temporary output file %s: %s\n"
 msgstr ""
 
-#: dos2unix.c:682 unix2dos.c:699
+#: dos2unix.c:743 unix2dos.c:758
 #, c-format
 msgid "problems resolving symbolic link '%s'\n"
 msgstr ""
 
-#: dos2unix.c:683 dos2unix.c:717 unix2dos.c:700 unix2dos.c:734
+#: dos2unix.c:744 dos2unix.c:778 unix2dos.c:759 unix2dos.c:793
 #, c-format
 msgid "          output file remains in '%s'\n"
 msgstr ""
 
-#: dos2unix.c:712 unix2dos.c:729
+#: dos2unix.c:773 unix2dos.c:788
 #, c-format
 msgid "problems renaming '%s' to '%s': %s\n"
 msgstr ""
 
-#: dos2unix.c:715 unix2dos.c:732
+#: dos2unix.c:776 unix2dos.c:791
 #, c-format
 msgid "          which is the target of symbolic link '%s'\n"
 msgstr ""
 
-#: dos2unix.c:807 unix2dos.c:824
+#: dos2unix.c:874 unix2dos.c:889
 msgid "error: Value of environment variable DOS2UNIX_LOCALEDIR is too long.\n"
 msgstr ""
 
-#: dos2unix.c:904 dos2unix.c:935 unix2dos.c:921 unix2dos.c:952
+#: dos2unix.c:977 dos2unix.c:1014 unix2dos.c:992 unix2dos.c:1029
 #, c-format
 msgid "active code page: %d\n"
 msgstr ""
 
-#: dos2unix.c:945 unix2dos.c:962
+#: dos2unix.c:1024 unix2dos.c:1039
 #, c-format
 msgid "invalid %s conversion mode specified\n"
 msgstr ""
 
-#: dos2unix.c:955 unix2dos.c:972
+#: dos2unix.c:1034 unix2dos.c:1049
 #, c-format
 msgid "option '%s' requires an argument\n"
 msgstr ""
 
-#: dos2unix.c:968 dos2unix.c:982 dos2unix.c:1176 unix2dos.c:985 unix2dos.c:999
-#: unix2dos.c:1199
+#: dos2unix.c:1047 dos2unix.c:1061 dos2unix.c:1255 unix2dos.c:1062
+#: unix2dos.c:1076 unix2dos.c:1276
 #, c-format
 msgid "target of file %s not specified in new file mode\n"
 msgstr ""
 
-#: dos2unix.c:1012 dos2unix.c:1096 unix2dos.c:1029 unix2dos.c:1116
+#: dos2unix.c:1091 dos2unix.c:1175 unix2dos.c:1106 unix2dos.c:1193
 #, c-format
 msgid "Skipping %s, not a regular file.\n"
 msgstr ""
 
-#: dos2unix.c:1019 unix2dos.c:1036
+#: dos2unix.c:1098 unix2dos.c:1113
 #, c-format
 msgid "Skipping %s, output file %s is a symbolic link.\n"
 msgstr ""
 
-#: dos2unix.c:1026 dos2unix.c:1110 unix2dos.c:1043 unix2dos.c:1130
+#: dos2unix.c:1105 dos2unix.c:1189 unix2dos.c:1120 unix2dos.c:1207
 #, c-format
 msgid "Skipping symbolic link %s, target is not a regular file.\n"
 msgstr ""
 
-#: dos2unix.c:1033 unix2dos.c:1050
+#: dos2unix.c:1112 unix2dos.c:1127
 #, c-format
 msgid "Skipping %s, target of symbolic link %s is not a regular file.\n"
 msgstr ""
 
-#: dos2unix.c:1040 dos2unix.c:1117 unix2dos.c:1057 unix2dos.c:1137
+#: dos2unix.c:1119 dos2unix.c:1196 unix2dos.c:1134 unix2dos.c:1214
 #, c-format
 msgid "Skipping binary file %s\n"
 msgstr ""
 
-#: dos2unix.c:1047 dos2unix.c:1124 unix2dos.c:1064 unix2dos.c:1144
+#: dos2unix.c:1126 dos2unix.c:1203 unix2dos.c:1141 unix2dos.c:1221
 #, c-format
 msgid "code page %d is not supported.\n"
 msgstr ""
 
-#: dos2unix.c:1054 dos2unix.c:1131 unix2dos.c:1071 unix2dos.c:1151
+#: dos2unix.c:1133 dos2unix.c:1210 unix2dos.c:1148 unix2dos.c:1228
 #, c-format
 msgid ""
 "Skipping UTF-16 file %s, the current locale character encoding is not "
 "UTF-8.\n"
 msgstr ""
 
-#: dos2unix.c:1061 dos2unix.c:1138 unix2dos.c:1078 unix2dos.c:1158
+#: dos2unix.c:1140 dos2unix.c:1217 unix2dos.c:1155 unix2dos.c:1235
 #, c-format
 msgid "Skipping UTF-16 file %s, the size of wchar_t is %d bytes.\n"
 msgstr ""
 
-#: dos2unix.c:1068 dos2unix.c:1145 unix2dos.c:1085 unix2dos.c:1165
+#: dos2unix.c:1147 dos2unix.c:1224 unix2dos.c:1162 unix2dos.c:1242
 #, c-format
 msgid "Skipping UTF-16 file %s, an UTF-16 conversion error occurred.\n"
 msgstr ""
 
-#: dos2unix.c:1074
+#: dos2unix.c:1153
 #, c-format
 msgid "converting file %s to file %s in Unix format ...\n"
 msgstr ""
 
-#: dos2unix.c:1081 unix2dos.c:1101
+#: dos2unix.c:1160 unix2dos.c:1178
 #, c-format
 msgid "problems converting file %s to file %s\n"
 msgstr ""
 
-#: dos2unix.c:1103 unix2dos.c:1123
+#: dos2unix.c:1182 unix2dos.c:1200
 #, c-format
 msgid "Skipping symbolic link %s.\n"
 msgstr ""
 
-#: dos2unix.c:1151
+#: dos2unix.c:1230
 #, c-format
 msgid "converting file %s to Unix format ...\n"
 msgstr ""
 
-#: dos2unix.c:1158 unix2dos.c:1181
+#: dos2unix.c:1237 unix2dos.c:1258
 #, c-format
 msgid "problems converting file %s\n"
 msgstr ""
 
 #: unix2dos.c:66
 msgid ""
-"Copyright (C) 2009-2012 Erwin Waterlander\n"
+"Copyright (C) 2009-2013 Erwin Waterlander\n"
 "Copyright (C) 1994-1995 Benjamin Lin\n"
 "All rights reserved.\n"
 "\n"
 msgstr ""
 
-#: unix2dos.c:1092
+#: unix2dos.c:1169
 #, c-format
 msgid "converting file %s to file %s in Mac format ...\n"
 msgstr ""
 
-#: unix2dos.c:1094
+#: unix2dos.c:1171
 #, c-format
 msgid "converting file %s to file %s in DOS format ...\n"
 msgstr ""
 
-#: unix2dos.c:1172
+#: unix2dos.c:1249
 #, c-format
 msgid "converting file %s to Mac format ...\n"
 msgstr ""
 
-#: unix2dos.c:1174
+#: unix2dos.c:1251
 #, c-format
 msgid "converting file %s to DOS format ...\n"
 msgstr ""
 
-#: common.c:167
+#: common.c:169
 msgid ""
 "Redistribution and use in source and binary forms, with or without\n"
 "modification, are permitted provided that the following conditions\n"
@@ -232,7 +248,7 @@ msgid ""
 "IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
 msgstr ""
 
-#: common.c:193
+#: common.c:195
 #, c-format
 msgid ""
 "%s %s (%s)\n"
@@ -257,14 +273,21 @@ msgid ""
 " -n, --newfile         write to new file\n"
 "   infile              original file in new file mode\n"
 "   outfile             output file in new file mode\n"
-" -o, --oldfile         write to old file\n"
+" -o, --oldfile         write to old file (default)\n"
 "   file ...            files to convert in old file mode\n"
 " -q, --quiet           quiet mode, suppress all warnings\n"
 "                       always on in stdio mode\n"
 " -s, --safe            skip binary files (default)\n"
 msgstr ""
 
-#: common.c:223
+#: common.c:225
+#, c-format
+msgid ""
+" -ul, --assume-utf16le Assume that the input format is UTF-16LE\n"
+" -ub, --assume-utf16be Assume that the input format is UTF-16BE\n"
+msgstr ""
+
+#: common.c:230
 #, c-format
 msgid ""
 " -F, --follow-symlink  follow symbolic links and convert the targets\n"
@@ -273,59 +296,77 @@ msgid ""
 " -S, --skip-symlink    keep symbolic links and targets unchanged (default)\n"
 msgstr ""
 
-#: common.c:229
+#: common.c:236
 #, c-format
 msgid " -V, --version         display version number\n"
 msgstr ""
 
-#: common.c:241
+#: common.c:249
 msgid "DOS 16 bit version (WATCOMC).\n"
 msgstr ""
 
-#: common.c:243
+#: common.c:251
 msgid "DOS 16 bit version (TURBOC).\n"
 msgstr ""
 
-#: common.c:245
+#: common.c:253
 msgid "DOS 32 bit version (WATCOMC).\n"
 msgstr ""
 
-#: common.c:247
+#: common.c:255
 msgid "DOS 32 bit version (DJGPP).\n"
 msgstr ""
 
-#: common.c:249
+#: common.c:257
 msgid "MSYS version.\n"
 msgstr ""
 
-#: common.c:251
+#: common.c:259
 msgid "Cygwin version.\n"
 msgstr ""
 
-#: common.c:253
+#: common.c:261
 msgid "Windows 64 bit version (MinGW-w64).\n"
 msgstr ""
 
-#: common.c:255
+#: common.c:263
 msgid "Windows 32 bit version (WATCOMC).\n"
 msgstr ""
 
-#: common.c:257
-msgid "Windows 32 bit version (MinGW).\n"
-msgstr ""
-
-#: common.c:259
-msgid "OS/2 version.\n"
-msgstr ""
-
-#: common.c:262
-msgid "With Unicode UTF-16 support.\n"
-msgstr ""
-
-#: common.c:264
-msgid "Without Unicode UTF-16 support.\n"
+#: common.c:265
+msgid "Windows 32 bit version (MinGW-w64).\n"
 msgstr ""
 
 #: common.c:267
+msgid "Windows 32 bit version (MinGW).\n"
+msgstr ""
+
+#: common.c:269
+#, c-format
+msgid "Windows 64 bit version (MSVC %d).\n"
+msgstr ""
+
+#: common.c:271
+#, c-format
+msgid "Windows 32 bit version (MSVC %d).\n"
+msgstr ""
+
+#: common.c:273
+msgid "OS/2 version (WATCOMC).\n"
+msgstr ""
+
+#: common.c:275
+msgid "OS/2 version (EMX).\n"
+msgstr ""
+
+#: common.c:278
+msgid "With Unicode UTF-16 support.\n"
+msgstr ""
+
+#: common.c:280
+msgid "Without Unicode UTF-16 support.\n"
+msgstr ""
+
+#: common.c:283
 msgid "With native language support.\n"
 msgstr ""

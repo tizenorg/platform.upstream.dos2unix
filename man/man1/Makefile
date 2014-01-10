@@ -64,11 +64,39 @@ MANPAGE		= $(MANDEST)$(PACKAGE).$(MANSECT)
 
 POD2MAN		= pod2man
 POD2MAN_FLAGS	=
+MAN_NONLATIN    ?= 1
 
 PODFILES = $(wildcard ../*/man1/dos2unix.pod)
 MAN_OBJECTS = dos2unix.1 $(patsubst %.pod,%.1,$(PODFILES))
+ifeq ($(MAN_NONLATIN),1)
+PODFILES_NONLATIN = $(wildcard ../nonlatin/*/man1/dos2unix.pod)
+MAN_OBJECTS_NONLATIN = dos2unix.1 $(patsubst %.pod,%.1,$(PODFILES_NONLATIN))
+endif
 
-all: $(MAN_OBJECTS)
+all: $(MAN_OBJECTS) $(MAN_OBJECTS_NONLATIN)
+
+MAN_OBJECTS_NONLATIN = $(patsubst %.pod,%.1,$(PODFILES_NONLATIN))
+
+# The .pod files for Latin scripts are encoded in Latin-1 (ISO-8859-1/CP1252).
+# UTF-8 man pages are not properly displayed in a Windows Command Prompt,
+# therefore we keep them in Latin-1 format.
+
+# Cygwin 1.7 expects man pages to be in Latin-1 format.
+
+# The perl version of MinGW and DJGPP is 5.8.8. The pod2man command of perl
+# 5.8.8 does not yet have the options -u, --utf8, and does support the =encoding
+# command.
+
+# There are different *roff implementations. For now I assume we are using
+# groff (GNU-roff) which is wide spread, default on Linux, Cygwin, MinGW, and
+# DJGPP.  The groff specific escape sequences may not work with other *roff
+# implementations, but they display OK when used in a Windows Command Prompt
+# using DJGPP's or MinGW's groff. Although sometimes characters are displayed
+# without their diacritics.
+
+# One day everything will be in UTF-8...
+# For the English manual it all makes no difference, because the English text
+# is plain ASCII.
 
 %.1 : %.pod
 	# make target - create manual page from a *.pod page
@@ -78,10 +106,10 @@ all: $(MAN_OBJECTS)
 		--name="$(PACKAGE)" \
 		--section="$(MANSECT)" \
 		$< \
-	| sed 's,[Pp]erl v[0-9.]\+,$(PACKAGE),' \
+	| perl -p -e 's/[Pp]erl v[0-9.]+/$(PACKAGE)/;' \
 	  > $@ && \
 	rm -f pod*.tmp
-# fix for bug http://rt.perl.org/rt3//Public/Bug/Display.html?id=79410 
+# fix for bug http://rt.perl.org/rt3//Public/Bug/Display.html?id=79410
 # "Pod2man creates wrong ROFF esc sequences for Latin-1 characters."
 # Create groff (specific) escape sequences which work also on DOS/Windows.
 # See also: https://rt.cpan.org/Public/Bug/Display.html?id=73804
@@ -97,5 +125,32 @@ all: $(MAN_OBJECTS)
 		-e s/o\\\\\\*\'/\\\\[\'o]/g\; \
 		-e s/u\\\\\\*\'/\\\\[\'u]/g\; \
 		$@
+
+
+
+# The .pod files under the 'nonlatin' folder are encoded in UTF-8.
+# For these manuals pod2man needs to support the =encoding command
+# and the --utf8 option. This is supported since perl 5.10.1.
+# Erwin W.
+
+nonlatin: $(MAN_OBJECTS_NONLATIN)
+
+
+../nonlatin/ru/%.1 : ../nonlatin/ru/%.pod
+	# make target - create manual page from a *.pod page
+	podchecker $<
+	$(POD2MAN) $(POD2MAN_FLAGS) \
+                --utf8 \
+		--center="$(PODCENTER)" \
+		--name="$(PACKAGE)" \
+		--section="$(MANSECT)" \
+		$< \
+	| perl -p -e 's/[Pp]erl v[0-9.]+/$(PACKAGE)/;' \
+	  > $@ && \
+	rm -f pod*.tmp
+
+clean:
+	rm -f $(MAN_OBJECTS)
+	rm -f $(MAN_OBJECTS_NONLATIN)
 
 # End of of Makefile part

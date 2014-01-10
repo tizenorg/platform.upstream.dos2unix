@@ -1,8 +1,8 @@
 # Author: Erwin Waterlander
 #
-#   Copyright (C) 2009-2012 Erwin Waterlander
+#   Copyright (C) 2009-2013 Erwin Waterlander
 #   All rights reserved.
-# 
+#
 #   Redistribution and use in source and binary forms, with or without
 #   modification, are permitted provided that the following conditions
 #   are met:
@@ -11,7 +11,7 @@
 #   2. Redistributions in binary form must reproduce the above copyright
 #      notice in the documentation and/or other materials provided with
 #      the distribution.
-# 
+#
 #   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY
 #   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 #   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -35,8 +35,10 @@
 
 include version.mk
 
-CC		= gcc
-CPP		= cpp
+.PHONY: man txt html pdf mofiles tags merge
+
+CC		?= gcc
+CPP		?= cpp
 CPP_FLAGS_POD	= ALL
 STRIP		= strip
 
@@ -51,6 +53,10 @@ ENABLE_NLS	= 1
 LFS             = 1
 DEBUG = 0
 UCS = 1
+# I can set MAN_NONLATIN to 1, despite the compilation issues with old Perl
+# versions, because I'm going to include the non-Latin1 manual files into the
+# source package.
+MAN_NONLATIN = 1
 
 EXE=
 
@@ -88,12 +94,19 @@ ifdef ENABLE_NLS
 endif
 
 HTMLEXT = htm
-DOCFILES	= $(PACKAGE).txt $(PACKAGE).$(HTMLEXT)
-INSTALL_OBJS_DOC = README.txt NEWS.txt ChangeLog.txt COPYING.txt TODO.txt BUGS.txt $(DOCFILES)
+# By default we generate only English text and html manuals.
+# Then we don't need "pod2text --utf8" and we have no dependency on iconv.
+DOCFILES	= man/man1/$(PACKAGE).txt man/man1/$(PACKAGE).$(HTMLEXT)
+INSTALL_OBJS_DOC = README.txt INSTALL.txt NEWS.txt ChangeLog.txt COPYING.txt TODO.txt BUGS.txt $(DOCFILES)
 
-#PODFILES	= man/man1/dos2unix.pod $(wildcard man/*/man1/dos2unix.pod)
+PODFILES_ALL	= man/man1/dos2unix.pod $(wildcard man/*/man1/dos2unix.pod)
 PODFILES	= $(wildcard man/*/man1/dos2unix.pod)
 MANFILES	= $(patsubst %.pod,%.1,$(PODFILES))
+TXTFILES	= $(patsubst %.pod,%.txt,$(PODFILES_ALL))
+HTMLFILES	= $(patsubst %.pod,%.$(HTMLEXT),$(PODFILES_ALL))
+PSFILES 	= $(patsubst %.pod,%.ps,$(PODFILES_ALL))
+PDFFILES	= $(patsubst %.pod,%.pdf,$(PODFILES_ALL))
+UTF8FILES	= $(patsubst %.pod,%.ut8,$(PODFILES_ALL))
 
 # On some systems (e.g. FreeBSD 4.10) GNU install is installed as `ginstall'.
 INSTALL		= install
@@ -109,24 +122,25 @@ VERSIONSUFFIX	= -bin
 
 # ......................................................... OS flags ...
 
-OS =
+D2U_OS =
 
-ifndef OS
-ifneq (, $(wildcard /boot/vmlinuz*))
-	OS = linux
+ifndef D2U_OS
+ifeq (Linux, $(shell uname -s))
+	D2U_OS = linux
 endif
 endif
 
-ifndef OS
+ifndef D2U_OS
 ifeq ($(findstring CYGWIN,$(shell uname)),CYGWIN)
-	OS = cygwin
+	D2U_OS = cygwin
 endif
 endif
 
-ifeq (cygwin,$(OS))
+ifeq (cygwin,$(D2U_OS))
 ifdef ENABLE_NLS
-	LDFLAGS_EXTRA = -lintl -liconv -Wl,--enable-auto-import
+	LIBS_EXTRA = -lintl -liconv
 endif
+	LDFLAGS_EXTRA = -Wl,--enable-auto-import
 	EXE = .exe
 	# allow non-cygwin clients which do not understand cygwin
 	# symbolic links to launch applications...
@@ -138,96 +152,123 @@ endif
 	# documentation directories.
 	docsubdir	= $(PACKAGE)
 	VERSIONSUFFIX	= -cygwin
+	MAN_NONLATIN = 1
 endif
 
-ifndef OS
+ifndef D2U_OS
 ifeq ($(findstring MSYS,$(shell uname)),MSYS)
-	OS = msys
+	CC=gcc
+	D2U_OS = msys
 	EXE = .exe
 	VERSIONSUFFIX	= -msys
 	EO_XNOTATION=1
 	UCS =
+	MAN_NONLATIN =
 ifdef ENABLE_NLS
-	LDFLAGS_EXTRA = -lintl -liconv
+	LIBS_EXTRA = -lintl -liconv
 endif
 endif
 endif
 
-ifndef OS
+ifndef D2U_OS
 ifeq ($(findstring MINGW32,$(shell uname)),MINGW32)
-	OS = mingw32
+	D2U_OS = mingw32
 	prefix=c:/usr/local
 	EXE = .exe
 	VERSIONSUFFIX	= -win32
 	LINK = cp -f
 	EO_XNOTATION=1
+	MAN_NONLATIN =
 ifdef ENABLE_NLS
-	LDFLAGS_EXTRA = -lintl -liconv
+	LIBS_EXTRA = -lintl -liconv
 	ZIPOBJ_EXTRA = bin/libintl-8.dll bin/libiconv-2.dll
+endif
+ifeq ($(findstring w64-mingw32,$(shell gcc -dumpmachine)),w64-mingw32)
+	CFLAGS_COMPILER = -DD2U_COMPILER=MINGW32_W64
 endif
 endif
 endif
 
-ifndef OS
-ifeq ($(shell uname),MS-DOS)
-	OS = msdos
-	prefix=c:/djgpp
+ifndef D2U_OS
+ifneq ($(DJGPP),)
+	D2U_OS = msdos
+	prefix=c:/dos32
 	EXE = .exe
-	VERSIONSUFFIX	= -dos32
+	VERSIONSUFFIX = pm
 	LINK_MAN = cp -f
 	docsubdir = dos2unix
 	EO_XNOTATION=1
 	UCS =
+	MAN_NONLATIN =
 	ZIPOBJ_EXTRA = bin/cwsdpmi.exe
 ifdef ENABLE_NLS
-	LDFLAGS_EXTRA = -lintl -liconv
+	LIBS_EXTRA = -lintl -liconv
 endif
 endif
 endif
 
-ifndef OS
+ifndef D2U_OS
+ifeq ($(shell uname),OS/2)
+	D2U_OS = os/2
+	prefix=c:/usr
+	EXE = .exe
+	VERSIONSUFFIX = -os2
+	LINK_MAN = cp -f
+	EO_XNOTATION=1
+	UCS =
+	MAN_NONLATIN =
+	LDFLAGS_EXTRA = -Zargs-wild
+ifdef ENABLE_NLS
+	LIBS_EXTRA += -lintl -liconv
+endif
+endif
+endif
+
+ifndef D2U_OS
 ifeq (FreeBSD, $(shell uname -s))
-	OS = freebsd
+	D2U_OS = freebsd
 ifdef ENABLE_NLS
 	CFLAGS_OS     = -I/usr/local/include
-	LDFLAGS_EXTRA = -lintl -L/usr/local/lib
+	LDFLAGS_EXTRA = -L/usr/local/lib
+	LIBS_EXTRA    = -lintl
 endif
 endif
 endif
 
 ifeq (Darwin, $(shell uname -s))
-	OS = Darwin
+	D2U_OS = Darwin
 ifdef ENABLE_NLS
 	CFLAGS_OS     = -I/usr/local/include
-	LDFLAGS_EXTRA = -lintl -L/usr/local/lib
+	LDFLAGS_EXTRA = -L/usr/local/lib
+	LIBS_EXTRA    = -lintl
 endif
 endif
 
 
-ifndef OS
+ifndef D2U_OS
 ifneq (, $(wildcard /opt/csw))
-	OS = sun
+	D2U_OS = sun
 endif
 endif
 
-ifeq (sun,$(OS))
+ifeq (sun,$(D2U_OS))
 	# Running under SunOS/Solaris
-	LDFLAGS_EXTRA = -lintl
+	LIBS_EXTRA = -lintl
 endif
 
-ifndef OS
+ifndef D2U_OS
 ifeq (HP-UX, $(shell uname -s))
-	OS = hpux
+	D2U_OS = hpux
 endif
 endif
 
-ifeq (hpux,$(OS))
+ifeq (hpux,$(D2U_OS))
 	# Running under HP-UX
 	EXTRA_DEFS += -Dhpux -D_HPUX_SOURCE
 endif
 
-ifndef OS
-	OS = unknown
+ifndef D2U_OS
+	D2U_OS = $(shell uname -s)
 endif
 
 # ............................................................ flags ...
@@ -239,14 +280,27 @@ ifdef EO_XNOTATION
 EO_NOTATION = -x
 endif
 
+ifeq ($(MAN_NONLATIN),1)
+PODFILES_NONLATIN  = $(wildcard man/nonlatin/*/man1/dos2unix.pod)
+MANFILES_NONLATIN  = $(patsubst %.pod,%.1,$(PODFILES_NONLATIN))
+TXTFILES_NONLATIN  = $(patsubst %.pod,%.txt,$(PODFILES_NONLATIN))
+HTMLFILES_NONLATIN = $(patsubst %.pod,%.$(HTMLEXT),$(PODFILES_NONLATIN))
+# PostScript and PDF generation from UTF-8 manuals is not working,
+# or I don't know how to do it.
+#PSFILES_NONLATIN   = $(patsubst %.pod,%.ps,$(PODFILES_NONLATIN))
+#PDFFILES_NONLATIN  = $(patsubst %.pod,%.pdf,$(PODFILES_NONLATIN))
+endif
+
 CFLAGS_USER	=
-CFLAGS		= -O2 -Wall $(RPM_OPT_FLAGS) $(CPPFLAGS) $(CFLAGS_USER)
+CFLAGS		?= -O2
+CFLAGS		+= -Wall $(RPM_OPT_FLAGS) $(CPPFLAGS) $(CFLAGS_USER)
 
 EXTRA_CFLAGS	= -DVER_REVISION=\"$(DOS2UNIX_VERSION)\" \
 		  -DVER_DATE=\"$(DOS2UNIX_DATE)\" \
 		  -DVER_AUTHOR=\"$(DOS2UNIX_AUTHOR)\" \
 		  -DDEBUG=$(DEBUG) \
-		  $(CFLAGS_OS)
+		  $(CFLAGS_OS) \
+		  $(CFLAGS_COMPILER)
 
 ifeq ($(DEBUG), 1)
 	EXTRA_CFLAGS += -g
@@ -266,13 +320,22 @@ endif
 
 LDFLAGS_USER	=
 LDFLAGS = $(RPM_OPT_FLAGS) $(LDFLAGS_EXTRA) $(LDFLAGS_USER)
+LIBS    = $(LIBS_EXTRA)
 
 DEFS_USER	=
 DEFS		= $(EXTRA_DEFS) $(DEFS_USER)
 
 # .......................................................... targets ...
 
-all: $(BIN) $(MAC2UNIX_BIN) $(UNIX2DOS_BIN) $(UNIX2MAC_BIN) $(DOCFILES) $(MOFILES) $(EOX_POFILES) $(MANFILES) man/man1/dos2unix.1
+all: $(BIN) $(MAC2UNIX_BIN) $(UNIX2DOS_BIN) $(UNIX2MAC_BIN) $(DOCFILES) $(MOFILES) $(EOX_POFILES) man/man1/dos2unix.1 $(MANFILES) $(MANFILES_NONLATIN)
+
+status:
+	@echo "D2U_OS       = $(D2U_OS)"
+	@echo "UCS          = $(UCS)"
+	@echo "CFLAGS       = $(CFLAGS)"
+	@echo "EXTRA_CFLAGS = $(EXTRA_CFLAGS)"
+	@echo "LDFLAGS      = $(LDFLAGS)"
+	@echo "LIBS         = $(LIBS)"
 
 common.o : common.c common.h
 	$(CC) $(DEFS) $(EXTRA_CFLAGS) $(DOS2UNIX_NLSDEFS) $(CFLAGS) -c $< -o $@
@@ -280,38 +343,40 @@ common.o : common.c common.h
 querycp.o : querycp.c querycp.h
 	$(CC) $(DEFS) $(EXTRA_CFLAGS) $(DOS2UNIX_NLSDEFS) $(CFLAGS) -c $< -o $@
 
-dos2unix.o : dos2unix.c dos2unix.h querycp.h common.h
+dos2unix.o : dos2unix.c dos2unix.h querycp.h common.h version.mk
 	$(CC) $(DEFS) $(EXTRA_CFLAGS) $(DOS2UNIX_NLSDEFS) $(CFLAGS) -c $< -o $@
 
-unix2dos.o : unix2dos.c unix2dos.h querycp.h common.h
+unix2dos.o : unix2dos.c unix2dos.h querycp.h common.h version.mk
 	$(CC) $(DEFS) $(EXTRA_CFLAGS) $(DOS2UNIX_NLSDEFS) $(CFLAGS) -c $< -o $@
 
 $(BIN): dos2unix.o querycp.o common.o
-	$(CC) $+ $(LDFLAGS) -o $@
+	$(CC) $+ $(LDFLAGS) $(LIBS) -o $@
 
 $(UNIX2DOS_BIN): unix2dos.o querycp.o common.o
-	$(CC) $+ $(LDFLAGS) -o $@
+	$(CC) $+ $(LDFLAGS) $(LIBS) -o $@
 
 $(MAC2UNIX_BIN) : $(BIN)
 	$(LINK) $< $@
 
 %.1 : %.pod
-	$(MAKE) -C man/man1
+	$(MAKE) -C man/man1 MAN_NONLATIN=$(MAN_NONLATIN)
 
 $(UNIX2MAC_BIN) : $(UNIX2DOS_BIN)
 	$(LINK) $< $@
 
 mofiles: $(MOFILES)
 
-html: $(PACKAGE).$(HTMLEXT)
+html: $(HTMLFILES) $(HTMLFILES_NONLATIN)
 
-txt: $(PACKAGE).txt
+txt: $(TXTFILES) $(TXTFILES_NONLATIN)
 
-ps: $(PACKAGE).ps
+ps: $(PSFILES) $(PSFILES_NONLATIN)
 
-pdf: $(PACKAGE).pdf
+pdf: $(PDFFILES) $(PDFFILES_NONLATIN)
 
-doc: $(DOCFILES) $(MANFILES) man/man1/dos2unix.1
+man: man/man1/dos2unix.1 $(MANFILES) $(MANFILES_NONLATIN)
+
+doc: $(DOCFILES)
 
 tags: $(POT)
 
@@ -331,16 +396,51 @@ po/eo.mo : po/eo$(EO_NOTATION).po
 $(POT) : dos2unix.c unix2dos.c common.c
 	xgettext -C --keyword=_ $+ -o $(POT)
 
-%.txt : man/man1/%.pod
-	LC_CTYPE=C pod2text $< > $@
+# Convert text files to UTF-8. Notepad has no problem with UTF-8.
+# Use iconv to convert to UTF-8. There are many old pod2text versions
+# around that don't have the --utf8 option yet.
+%.tx1 : %.pod
+	pod2text $< > $@
 
-%.ps : man/man1/%.1
+%.txt : %.tx1
+	iconv -f ISO-8859-1 -t UTF-8 $< > $@
+
+# Create the English txt manual straight from the .pod file. It contains only ASCII.
+# This saves a dependency on iconv.
+man/man1/$(PACKAGE).txt : man/man1/$(PACKAGE).pod
+	pod2text $< > $@
+
+# Non-Latin1 script manuals are already in UTF-8 format.
+man/nonlatin/ru/man1/$(PACKAGE).txt : man/nonlatin/ru/man1/$(PACKAGE).pod
+	pod2text $< > $@
+
+%.ps : %.1
 	groff -man $< -T ps > $@
 
 %.pdf: %.ps
 	ps2pdf $< $@
 
-%.$(HTMLEXT) : man/man1/%.pod
+# The POD files are encoded in Latin-1. See also man/man1/Makefile
+# For non-English HTML it is best to use UTF-8.
+%.ut8 : %.pod
+	iconv -f ISO-8859-1 -t UTF-8 $< > $@
+
+# Generic rule.
+%.$(HTMLEXT) : %.ut8
+	pod2html --title="$(PACKAGE) $(DOS2UNIX_VERSION) - DOS/MAC to UNIX and vice versa text file format converter" $< > $@
+
+# Create the English html manual straight from the .pod file. It contains only ASCII.
+# This saves a dependency on iconv.
+man/man1/$(PACKAGE).$(HTMLEXT) : man/man1/$(PACKAGE).pod
+	pod2html --title="$(PACKAGE) $(DOS2UNIX_VERSION) - DOS/MAC to UNIX and vice versa text file format converter" $< > $@
+
+man/nl/man1/$(PACKAGE).$(HTMLEXT) : man/nl/man1/$(PACKAGE).ut8
+	pod2html --title="$(PACKAGE) $(DOS2UNIX_VERSION) - DOS/Mac naar Unix en vice versa tekstbestand formaat omzetter" $< > $@
+
+man/es/man1/$(PACKAGE).$(HTMLEXT) : man/es/man1/$(PACKAGE).ut8
+	pod2html --title="$(PACKAGE) $(DOS2UNIX_VERSION) - Convertidor de archivos de texto de formato DOS/Mac a Unix y viceversa" $< > $@
+
+man/nonlatin/ru/man1/$(PACKAGE).$(HTMLEXT) : man/nonlatin/ru/man1/$(PACKAGE).pod
 	pod2html --title="$(PACKAGE) $(DOS2UNIX_VERSION) - DOS/MAC to UNIX and vice versa text file format converter" $< > $@
 
 install: all
@@ -370,14 +470,40 @@ endif
 	$(foreach manfile, $(MANFILES), cd $(DESTDIR)$(datarootdir)/$(dir $(manfile)) ; $(LINK_MAN) $(PACKAGE).1 $(MAC2UNIX).1 ;)
 	$(foreach manfile, $(MANFILES), cd $(DESTDIR)$(datarootdir)/$(dir $(manfile)) ; $(LINK_MAN) $(PACKAGE).1 $(UNIX2DOS).1 ;)
 	$(foreach manfile, $(MANFILES), cd $(DESTDIR)$(datarootdir)/$(dir $(manfile)) ; $(LINK_MAN) $(PACKAGE).1 $(UNIX2MAC).1 ;)
+	$(foreach manfile, $(MANFILES_NONLATIN), $(MKDIR) -p -m 755 $(DESTDIR)$(datarootdir)/$(subst nonlatin/,,$(dir $(manfile))) ;)
+	$(foreach manfile, $(MANFILES_NONLATIN), $(INSTALL) -m 644 $(manfile) $(DESTDIR)$(datarootdir)/$(subst nonlatin/,,$(dir $(manfile))) ;)
+	$(foreach manfile, $(MANFILES_NONLATIN), cd $(DESTDIR)$(datarootdir)/$(subst nonlatin/,,$(dir $(manfile))) ; $(LINK_MAN) $(PACKAGE).1 $(MAC2UNIX).1 ;)
+	$(foreach manfile, $(MANFILES_NONLATIN), cd $(DESTDIR)$(datarootdir)/$(subst nonlatin/,,$(dir $(manfile))) ; $(LINK_MAN) $(PACKAGE).1 $(UNIX2DOS).1 ;)
+	$(foreach manfile, $(MANFILES_NONLATIN), cd $(DESTDIR)$(datarootdir)/$(subst nonlatin/,,$(dir $(manfile))) ; $(LINK_MAN) $(PACKAGE).1 $(UNIX2MAC).1 ;)
 ifdef ENABLE_NLS
 	@echo "-- install-mo"
 	$(foreach mofile, $(MOFILES), $(MKDIR) -p -m 755 $(DESTDIR)$(localedir)/$(basename $(notdir $(mofile)))/LC_MESSAGES ;)
 	$(foreach mofile, $(MOFILES), $(INSTALL) -m 644 $(mofile) $(DESTDIR)$(localedir)/$(basename $(notdir $(mofile)))/LC_MESSAGES/$(PACKAGE).mo ;)
 endif
+	# Run a new instance of 'make' otherwise the $$(wildcard ) function my not have been expanded,
+	# because the files may not have been there when make was started.
+	$(MAKE) install-doc
+
+
+install-doc: $(INSTALL_OBJS_DOC)
 	@echo "-- install-doc"
 	$(MKDIR) -p -m 755 $(DESTDIR)$(docdir)
-	$(INSTALL) -m 644 $(INSTALL_OBJS_DOC) $(wildcard $(PACKAGE).ps) $(wildcard $(PACKAGE).pdf) $(DESTDIR)$(docdir)
+	$(INSTALL) -m 644 $(INSTALL_OBJS_DOC) $(DESTDIR)$(docdir)
+	# Install translated manuals when they have been generated.
+	$(foreach txtfile, $(wildcard man/*/man1/*.txt), $(MKDIR) -p -m 755 $(DESTDIR)$(docdir)/$(word 2,$(subst /, ,$(txtfile),)) ;)
+	$(foreach txtfile, $(wildcard man/*/man1/*.txt), $(INSTALL) -m 644 $(txtfile) $(DESTDIR)$(docdir)/$(word 2,$(subst /, ,$(txtfile),)) ;)
+	$(foreach htmlfile, $(wildcard man/*/man1/*.$(HTMLEXT)), $(MKDIR) -p -m 755 $(DESTDIR)$(docdir)/$(word 2,$(subst /, ,$(htmlfile),)) ;)
+	$(foreach htmlfile, $(wildcard man/*/man1/*.$(HTMLEXT)), $(INSTALL) -m 644 $(htmlfile) $(DESTDIR)$(docdir)/$(word 2,$(subst /, ,$(htmlfile),)) ;)
+	$(foreach pdffile, $(wildcard man/*/man1/*.pdf), $(MKDIR) -p -m 755 $(DESTDIR)$(docdir)/$(word 2,$(subst /, ,$(pdffile),)) ;)
+	$(foreach pdffile, $(wildcard man/*/man1/*.pdf), $(INSTALL) -m 644 $(pdffile) $(DESTDIR)$(docdir)/$(word 2,$(subst /, ,$(pdffile),)) ;)
+	$(foreach pdffile, $(wildcard man/man1/*.pdf), $(INSTALL) -m 644 $(pdffile) $(DESTDIR)$(docdir) ;)
+	$(foreach psfile, $(wildcard man/*/man1/*.ps), $(MKDIR) -p -m 755 $(DESTDIR)$(docdir)/$(word 2,$(subst /, ,$(psfile),)) ;)
+	$(foreach psfile, $(wildcard man/*/man1/*.ps), $(INSTALL) -m 644 $(psfile) $(DESTDIR)$(docdir)/$(word 2,$(subst /, ,$(psfile),)) ;)
+	$(foreach psfile, $(wildcard man/man1/*.ps), $(INSTALL) -m 644 $(psfile) $(DESTDIR)$(docdir) ;)
+	$(foreach txtfile, $(wildcard man/nonlatin/*/man1/*.txt), $(MKDIR) -p -m 755 $(DESTDIR)$(docdir)/$(word 3,$(subst /, ,$(txtfile),)) ;)
+	$(foreach txtfile, $(wildcard man/nonlatin/*/man1/*.txt), $(INSTALL) -m 644 $(txtfile) $(DESTDIR)$(docdir)/$(word 3,$(subst /, ,$(txtfile),)) ;)
+	$(foreach htmlfile, $(wildcard man/nonlatin/*/man1/*.$(HTMLEXT)), $(MKDIR) -p -m 755 $(DESTDIR)$(docdir)/$(word 3,$(subst /, ,$(htmlfile),)) ;)
+	$(foreach htmlfile, $(wildcard man/nonlatin/*/man1/*.$(HTMLEXT)), $(INSTALL) -m 644 $(htmlfile) $(DESTDIR)$(docdir)/$(word 3,$(subst /, ,$(htmlfile),)) ;)
 
 uninstall:
 	@echo "-- target: uninstall"
@@ -393,6 +519,7 @@ endif
 	-rm -f $(DESTDIR)$(mandir)/man1/$(UNIX2DOS).1
 	-rm -f $(DESTDIR)$(mandir)/man1/$(UNIX2MAC).1
 	$(foreach manfile, $(MANFILES), rm -f $(DESTDIR)$(datarootdir)/$(manfile) ;)
+	$(foreach manfile, $(MANFILES_NONLATIN), rm -f $(DESTDIR)$(datarootdir)/$(subst nonlatin/,,$(manfile)) ;)
 	-rm -rf $(DESTDIR)$(docdir)
 
 mostlyclean:
@@ -406,13 +533,35 @@ mostlyclean:
 	rm -f po/*.mo
 
 clean: mostlyclean
-	rm -f $(DOCFILES) $(PACKAGE).ps $(PACKAGE).pdf
 	rm -f man/man1/*.1
+	rm -f man/man1/*.txt
+	rm -f man/man1/*.$(HTMLEXT)
+	rm -f man/man1/*.ps
+	rm -f man/man1/*.pdf
+	rm -f man/man1/*.ut8
 	rm -f man/*/man1/*.1
+	rm -f man/*/man1/*.txt
+	rm -f man/*/man1/*.$(HTMLEXT)
+	rm -f man/*/man1/*.ps
+	rm -f man/*/man1/*.pdf
+	rm -f man/*/man1/*.ut8
+	rm -f man/nonlatin/*/man1/*.ps
+	rm -f man/nonlatin/*/man1/*.pdf
 
 distclean: clean
 
+# Because there is so much trouble with generating non-Latin1 man pages with
+# pod2man, due to old Perl versions (< 5.10.1) on many systems, I include the
+# non-Latin1 man pages in the source tar file.
+# Old pod2man versions do not have the --utf8 option. Old pod2man, pod2text,
+# and pod2html do not support the =encoding command.
+
 maintainer-clean: distclean
+	@echo 'This command is intended for maintainers to use; it'
+	@echo 'deletes files that may need special tools to rebuild.'
+	rm -f man/nonlatin/*/man1/*.txt
+	rm -f man/nonlatin/*/man1/*.$(HTMLEXT)
+	rm -f man/nonlatin/*/man1/*.1
 
 realclean: maintainer-clean
 
@@ -442,21 +591,24 @@ TBZFILE = $(PACKAGE)-$(DOS2UNIX_VERSION)$(VERSIONSUFFIX)$(NLSSUFFIX).tar.bz2
 
 dist-zip:
 	rm -f $(prefix)/$(ZIPFILE)
-	cd $(prefix) ; unix2dos share/doc/$(docsubdir)/*.txt share/man/man1/$(PACKAGE).1 share/man/man1/$(MAC2UNIX).1 share/man/man1/$(UNIX2DOS).1 share/man/man1/$(UNIX2MAC).1
-	cd $(prefix) ; unix2dos share/doc/$(docsubdir)/*.$(HTMLEXT)
+	cd $(prefix) ; unix2dos share/man/man1/*.1 share/man/*/man1/*.1
+	-cd $(prefix) ; unix2dos share/doc/$(docsubdir)/*.txt share/doc/$(docsubdir)/*/*.txt
+	-cd $(prefix) ; unix2dos share/doc/$(docsubdir)/*.$(HTMLEXT) share/doc/$(docsubdir)/*/*.$(HTMLEXT)
 	cd $(prefix) ; unix2dos share/man/*/man1/$(PACKAGE).1 share/man/*/man1/$(MAC2UNIX).1 share/man/*/man1/$(UNIX2DOS).1 share/man/*/man1/$(UNIX2MAC).1
 	cd $(prefix) ; zip -r $(ZIPFILE) $(ZIPOBJ)
 	mv -f $(prefix)/$(ZIPFILE) ..
 
 dist-tgz:
-	cd $(prefix) ; dos2unix share/doc/$(docsubdir)/*.txt share/man/man1/$(PACKAGE).1 share/man/man1/$(MAC2UNIX).1 share/man/man1/$(UNIX2DOS).1 share/man/man1/$(UNIX2MAC).1
-	cd $(prefix) ; dos2unix share/man/*/man1/$(PACKAGE).1 share/man/*/man1/$(MAC2UNIX).1 share/man/*/man1/$(UNIX2DOS).1 share/man/*/man1/$(UNIX2MAC).1
+	cd $(prefix) ; dos2unix share/man/man1/*.1 share/man/*/man1/*.1
+	-cd $(prefix) ; dos2unix share/doc/$(docsubdir)/*.txt share/doc/$(docsubdir)/*/*.txt
+	-cd $(prefix) ; dos2unix share/doc/$(docsubdir)/*.$(HTMLEXT) share/doc/$(docsubdir)/*/*.$(HTMLEXT)
 	cd $(prefix) ; tar cvzf $(TGZFILE) $(ZIPOBJ)
 	mv $(prefix)/$(TGZFILE) ..
 
 dist-tbz:
-	cd $(prefix) ; dos2unix share/doc/$(docsubdir)/*.txt share/man/man1/$(PACKAGE).1 share/man/man1/$(MAC2UNIX).1 share/man/man1/$(UNIX2DOS).1 share/man/man1/$(UNIX2MAC).1
-	cd $(prefix) ; dos2unix share/man/*/man1/$(PACKAGE).1 share/man/*/man1/$(MAC2UNIX).1 share/man/*/man1/$(UNIX2DOS).1 share/man/*/man1/$(UNIX2MAC).1
+	cd $(prefix) ; dos2unix share/man/man1/*.1 share/man/*/man1/*.1
+	-cd $(prefix) ; dos2unix share/doc/$(docsubdir)/*.txt dos2unix share/doc/$(docsubdir)/*/*.txt
+	-cd $(prefix) ; dos2unix share/doc/$(docsubdir)/*.$(HTMLEXT) dos2unix share/doc/$(docsubdir)/*/*.$(HTMLEXT)
 	cd $(prefix) ; tar cvjf $(TBZFILE) $(ZIPOBJ)
 	mv $(prefix)/$(TBZFILE) ..
 

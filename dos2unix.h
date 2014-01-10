@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2009-2011 Erwin Waterlander
+ *  Copyright (C) 2009-2012 Erwin Waterlander
  *  Copyright (C) 1994-1995 Benjamin Lin.
  *  All rights reserved.
  *
@@ -27,12 +27,6 @@
 
 #ifndef __DOS2UNIX_H
 #define __DOS2UNIX_H
-
-#ifdef __GNUC__
-#ifndef strcmpi
-#  define strcmpi(s1, s2) strcasecmp(s1, s2)
-#endif
-#endif
 
 /* ASCII mode. No conversion. */
 

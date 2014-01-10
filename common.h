@@ -1,7 +1,7 @@
 /*
  *   Copyright (C) 2009-2012 Erwin Waterlander
  *   All rights reserved.
- * 
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
@@ -10,7 +10,7 @@
  *   2. Redistributions in binary form must reproduce the above copyright
  *      notice in the documentation and/or other materials provided with
  *      the distribution.
- * 
+ *
  *   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY
  *   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  *   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -52,57 +52,65 @@
 
 #endif
 
-#if defined(DJGPP) || defined(__TURBOC__) /* DJGPP */
+#if defined(__DJGPP__) || defined(__TURBOC__) /* DJGPP */
 #  include <dir.h>
 #else
-#  ifndef __MSYS__
+#  if !defined(__MSYS__) && !defined(_MSC_VER)
 #    include <libgen.h>
 #  endif
 #endif
-#ifndef __TURBOC__
+#if !defined(__TURBOC__) && !defined(_MSC_VER)
 #include <unistd.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <utime.h>
+#ifdef __GNUC__
+#ifndef strcmpi
+#  include <strings.h>
+#  define strcmpi(s1, s2) strcasecmp(s1, s2)
+#endif
+#endif
+#ifdef _MSC_VER
+#  include <sys/utime.h>
+#else
+#  include <utime.h>
+#endif
 #include <limits.h>
 #ifdef __TURBOC__
 #define __FLAT__
 #endif
 #include <sys/stat.h>
-#ifdef ENABLE_NLS
-#include <locale.h>
-#endif
 #include <errno.h>
 #ifdef D2U_UNICODE
 #include <wchar.h>
 #endif
 
 #if (defined(__WATCOMC__) && defined(__NT__))  /* Watcom */
-#  define WIN32 1
+#  define _WIN32 1
 #endif
 
 #if defined(__WATCOMC__) && defined(__I86__) /* Watcom C, 16 bit Intel */
-#define MSDOS 1
+#define __MSDOS__ 1
 #endif
 
 #if defined(__WATCOMC__) && defined(__DOS__) /* Watcom C, 32 bit DOS */
-#define MSDOS 1
+#define __MSDOS__ 1
 #endif
 
-#if defined(WIN32) && !defined(__CYGWIN__) /* Windows */
-#define MSDOS 1
+#if defined(ENABLE_NLS) || (defined(D2U_UNICODE) && !defined(__MSDOS__) && !defined(_WIN32) && !defined(__OS2__))
+/* setlocale() is also needed for nl_langinfo() */
+#include <locale.h>
 #endif
 
-#if  defined(__TURBOC__) || defined(DJGPP) || defined(__MINGW32__)
+#if  defined(__TURBOC__) || defined(__DJGPP__) || defined(__MINGW32__) || defined(_MSC_VER)
 /* Some compilers have no mkstemp().
  * Use mktemp() instead.
  * BORLANDC, DJGPP, MINGW32 */
 #define NO_MKSTEMP 1
 #endif
 
-#if  defined(__TURBOC__) || defined(DJGPP) || defined(__MINGW32__) || defined(__WATCOMC__)
+#if  defined(__TURBOC__) || defined(__DJGPP__) || defined(__MINGW32__) || defined(__WATCOMC__) || defined(_MSC_VER)
 /* Some compilers have no chown(). */
 #define NO_CHOWN 1
 #endif
@@ -112,25 +120,34 @@
 #undef S_ISLNK
 #endif
 
-#if defined(MSDOS) || defined(__OS2__)
+/* Microsoft Visual C++ */
+#ifdef _MSC_VER
+#define S_ISCHR( m )    (((m) & _S_IFMT) == _S_IFCHR)
+#define S_ISDIR( m )    (((m) & _S_IFMT) == _S_IFDIR)
+#define S_ISFIFO( m )   (((m) & _S_IFMT) == _S_IFIFO)
+#define S_ISREG( m )    (((m) & _S_IFMT) == _S_IFREG)
+#define NO_CHMOD 1  /* no chmod() available */
+#endif
+
+#if defined(__MSDOS__) || defined(_WIN32) || defined(__OS2__)
 /* Systems without soft links use 'stat' instead of 'lstat'. */
 #define STAT stat
 #else
 #define STAT lstat
 #endif
 
-#if defined(MSDOS) || defined(__OS2__)
+#if defined(__MSDOS__) || defined(_WIN32) || defined(__OS2__)
 /* On some systems rename() will always fail if target file already exists. */
 #define NEED_REMOVE 1
 #endif
 
-#if defined(MSDOS) || defined(__CYGWIN__) || defined(__OS2__) /* DJGPP, MINGW32 and OS/2 */
+#if defined(__MSDOS__) || defined(_WIN32) || defined(__CYGWIN__) || defined(__OS2__) /* DJGPP, MINGW32 and OS/2 */
 /* required for setmode() and O_BINARY */
 #include <fcntl.h>
 #include <io.h>
 #endif
 
-#if defined(MSDOS) || defined(__CYGWIN__) || defined(__OS2__)
+#if defined(__MSDOS__) || defined(_WIN32) || defined(__CYGWIN__) || defined(__OS2__)
   #define R_CNTRL   "rb"
   #define W_CNTRL   "wb"
 #else
@@ -148,14 +165,16 @@
 #define WCHAR_T_TOO_SMALL 0x80
 #define UNICODE_CONVERSION_ERROR 0x100
 
-#define CONVMODE_ASCII  0
-#define CONVMODE_7BIT   1
-#define CONVMODE_437    437
-#define CONVMODE_850    850
-#define CONVMODE_860    860
-#define CONVMODE_863    863
-#define CONVMODE_865    865
-#define CONVMODE_1252   1252
+#define CONVMODE_ASCII   0
+#define CONVMODE_UTF16LE 1
+#define CONVMODE_UTF16BE 2
+#define CONVMODE_7BIT    3
+#define CONVMODE_437     437
+#define CONVMODE_850     850
+#define CONVMODE_860     860
+#define CONVMODE_863     863
+#define CONVMODE_865     865
+#define CONVMODE_1252    1252
 
 #define FROMTO_DOS2UNIX 0
 #define FROMTO_MAC2UNIX 1
@@ -176,8 +195,8 @@ typedef struct
   int NewFile;                          /* is in new file mode? */
   int Quiet;                            /* is in quiet mode? */
   int KeepDate;                         /* should keep date stamp? */
-  int ConvMode;                         /* 0: ascii, 1: 7bit, 2: iso */  
-  int FromToMode;                       /* 0: dos2unix/unix2dos, 1: mac2unix/unix2mac */  
+  int ConvMode;                         /* 0: ascii, 1: 7bit, 2: iso */
+  int FromToMode;                       /* 0: dos2unix/unix2dos, 1: mac2unix/unix2mac */
   int NewLine;                          /* if TRUE, then additional newline */
   int Force;                            /* if TRUE, force conversion of all files. */
   int Follow;                           /* 0: skip symlink, 1: follow symbolic link, 2: replace symlink. */

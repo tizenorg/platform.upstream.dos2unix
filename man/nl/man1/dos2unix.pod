@@ -1,9 +1,9 @@
 /*
 #  Copyright and License
 #
-#   Copyright (C) 2009-2012 Erwin Waterlander
+#   Copyright (C) 2009-2013 Erwin Waterlander
 #   All rights reserved.
-# 
+#
 #   Redistribution and use in source and binary forms, with or without
 #   modification, are permitted provided that the following conditions
 #   are met:
@@ -12,7 +12,7 @@
 #   2. Redistributions in binary form must reproduce the above copyright
 #      notice in the documentation and/or other materials provided with
 #      the distribution.
-# 
+#
 #   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY
 #   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 #   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -57,7 +57,7 @@ dos2unix - DOS/Mac naar Unix en vice versa tekstbestand formaat omzetter
 
 =head1 BESCHRIJVING
 
-Het Dos2unix pakket bevat toepassingen C<dos2unix> en C<unix2dos> om 
+Het Dos2unix pakket bevat toepassingen C<dos2unix> en C<unix2dos> om
 platte tekstbestanden in DOS of Mac formaat naar Unix om te zetten en
 vice versa.
 
@@ -66,12 +66,18 @@ twee tekens: een 'Carriage Return' (CR) gevolgd door een 'Line Feed' (LF). In
 Unix tekstbestanden bestaat een regeleinde uit een enkel 'Newline' teken die
 gelijk is aan een DOS 'Line Feed' (LF) teken.  In Mac tekst bestanden, voor Mac
 OS X, bestaan regeleindes uit een enkel 'Carriage Return' teken. Mac OS X is
-Unix gebaseerd en heeft dezelfde regeleindes als Unix. 
+Unix gebaseerd en heeft dezelfde regeleindes als Unix.
+
+Naast regeleindes kan Dos2unix ook de codering van bestanden omzetten. Enkele
+DOS code tabellen kunnen omgezet worden naar Unix Latin-1. En Windows
+Unicode (UTF-16) bestanden kunnen geconverteerd worden naar Unix Unicode
+(UTF-8) bestanden.
 
 Binaire bestanden worden automatisch overgeslagen, behalve als de omzetting
 geforceerd wordt.
 
-Niet-reguliere bestanden, zoals mappen en FIFOs, worden automatisch overgeslagen.
+Niet-reguliere bestanden, zoals mappen en FIFO's, worden automatisch
+overgeslagen.
 
 Symbolische koppelingen en hun doelen blijven standaard onaangeroerd.
 Optioneel kunnen symbolische koppelingen worden vervangen, of de uitvoer
@@ -81,7 +87,8 @@ symbolische koppelingen worden altijd vervangen, de doelen onaangeroerd
 gelaten.
 
 
-Dos2unix is gemodelleerd naar dos2unix onder SunOS/Solaris en heeft gelijke conversiemodi.
+Dos2unix is gemodelleerd naar dos2unix onder SunOS/Solaris en heeft gelijke
+conversiemodi.
 
 =head1 OPTIES
 
@@ -181,10 +188,26 @@ Nieuw-bestand-modus. Converteer bestand INVOERBESTAND en schrijf naar bestand
 UITVOERBESTAND. Bestandsnamen moeten opgegeven worden in paren. Jokertekens
 moeten NIET gebruikt worden, anders verlies je bestanden.
 
+De persoon die de conversie start in nieuw-bestand (gepaarde) modus wordt
+de eigenaar van het geconverteerde bestand. De lees/schrijf permissies van
+het nieuwe bestand worden de permissies van het originele bestand minus de
+umask(1) van de persoon die de conversie draait.
+
 =item B<-o, --oldfile BESTAND ...>
 
 Oud-bestand-modus. Converteer bestand BESTAND en overschrijf het.
 Dit is de standaard modus. Jokertekens kunnen gebruikt worden.
+
+In oud-bestand (plaatsvervangende) modus krijgt het geconverteerde bestand
+dezelfde eigenaar, groep en lees/schrijf rechten als het originele
+bestand. Ook wanneer het bestand wordt omgezet door een andere gebruiker
+die schrijfrechten heeft op het bestand (b.v. gebruiker root). De
+omzetting wordt afgebroken wanneer het niet mogelijk is de originele
+waardes te behouden.  Verandering van eigenaar kan betekenen dat de
+originele eigenaar het bestand niet meer kan lezen. Verandering van groep
+zou een veiligheidsrisico kunnen zijn, het bestand zou leesbaar kunnen
+worden voor personen voor wie het niet bestemd is. Behoud van eigenaar,
+groep en lees/schrijf rechten is alleen ondersteund op Unix.
 
 =item B<-q, --quiet>
 
@@ -194,6 +217,28 @@ Behalve wanneer verkeerde opties worden gegeven.
 =item B<-s, --safe>
 
 Sla binaire bestanden over (standaard).
+
+=item B<-ul, --assume-utf16le>
+
+Veronderstel dat het formaat van het invoerbestand UTF-16LE is.
+
+Wanneer er een Byte Order Mark (BOM) in het invoerbestand zit dan gaat de BOM
+voor op deze optie.
+
+Wanneer een verkeerde aanname is gemaakt (het invoerbestand was geen UTF-16LE
+formaat) en de conversie verliep met succes, dan krijgt u een UTF-8 bestand met
+verkeerde tekst. De verkeerde conversie kan ongedaan worden gemaakt door met
+iconv(1) het UTF-8 uitvoerbestand terug om te zetten naar UTF-16LE. Dit zal het
+originele bestand terug brengen.
+
+De aanname van UTF-16LE werkt als een I<conversie modus>. Door te schakelen
+naar I<ascii> modus wordt de UTF-16LE veronderstelling uitgeschakeld.
+
+=item B<-ub, --assume-utf16be>
+
+Veronderstel dat het formaat van het invoerbestand UTF-16BE is.
+
+Deze optie werkt hetzelfde als optie C<-ul>.
 
 =item B<-F, --follow-symlink>
 
@@ -259,7 +304,7 @@ codetabellen dos2unix in combinatie met iconv(1). Iconv kan omzetten tussen een
 lange lijst letterteken-coderingen.
 
 Gebruik ISO conversie nooit op Unicode tekst bestanden. Het zal UTF-8
-gecodeerde bestanden verminken.
+gecodeerde bestanden beschadigen.
 
 Enkele voorbeelden:
 
@@ -352,8 +397,7 @@ Dos2unix kan alleen detecteren of een bestand in UTF-16 formaat is als het
 bestand een BOM heeft. Wanneer een UTF-16 bestand geen BOM heeft, ziet
 dos2unix het bestand als een binair bestand.
 
-Gebruik dos2unix in combinatie met iconv(1) om een UTF-16 bestand zonder BOM om
-te zetten.
+Gebruik optie C<-ul> of C<-ub> om een UTF-16 bestand zonder BOM om te zetten.
 
 Dos2unix schrijft nooit een BOM in het uitvoerbestand, tenzij optie C<-m>
 gebruikt wordt.
@@ -367,9 +411,9 @@ Omzetten van Windows UTF-16 (met BOM) naar Unix UTF-8
 
     dos2unix -n in.txt uit.txt
 
-Omzetten van Windows UTF-16 (zonder BOM) naar Unix UTF-8
+Omzetten van Windows UTF-16LE (zonder BOM) naar Unix UTF-8
 
-    iconv -f UTF-16 -t UTF-8 in.txt | dos2unix > uit.txt
+    dos2unix -ul -n in.txt uit.txt
 
 Omzetten van Unix UTF-8 naar Windows UTF-8 met BOM
 
@@ -391,7 +435,7 @@ Omzetten en vervangen a.txt. Omzetten en vervangen b.txt.
     dos2unix a.txt b.txt
     dos2unix -o a.txt b.txt
 
-Omzetten en vervangen a.txt in ascii conversiemodus. 
+Omzetten en vervangen a.txt in ascii conversiemodus.
 
     dos2unix a.txt
 
@@ -423,7 +467,7 @@ Omzetten a.txt en schrijf naar e.txt.
 
 Omzetten a.txt en schrijf naar e.txt, behoud datum e.txt gelijk aan a.txt.
 
-    dos2unix -k -n a.txt e.txt 
+    dos2unix -k -n a.txt e.txt
 
 Omzetten en vervangen a.txt. Omzetten b.txt en schrijf naar e.txt.
 
@@ -526,7 +570,7 @@ Project pagina: L<http://waterlan.home.xs4all.nl/dos2unix.html>
 
 SourceForge pagina: L<http://sourceforge.net/projects/dos2unix/>
 
-Freshmeat: L<http://freshmeat.net/projects/dos2unix>
+Freecode: L<http://freecode.com/projects/dos2unix>
 
 =head1 ZIE OOK
 

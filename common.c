@@ -1,7 +1,7 @@
 /*
- *   Copyright (C) 2009-2012 Erwin Waterlander
+ *   Copyright (C) 2009-2013 Erwin Waterlander
  *   All rights reserved.
- * 
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
@@ -10,7 +10,7 @@
  *   2. Redistributions in binary form must reproduce the above copyright
  *      notice in the documentation and/or other materials provided with
  *      the distribution.
- * 
+ *
  *   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY
  *   EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  *   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -26,7 +26,7 @@
 
 #include "common.h"
 #if defined(D2U_UNICODE)
-#if defined(WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
 #endif
 #endif
@@ -98,8 +98,10 @@ int regfile(char *path, int allowSymlinks, CFlag *ipFlag, char *progname)
 #endif
       if (S_ISREG(buf.st_mode))
          fprintf(stderr, " (regular file)");
+#ifdef S_ISBLK
       if (S_ISBLK(buf.st_mode))
          fprintf(stderr, " (block device)");
+#endif
       if (S_ISDIR(buf.st_mode))
          fprintf(stderr, " (directory)");
       if (S_ISCHR(buf.st_mode))
@@ -213,12 +215,17 @@ Usage: %s [options] [file ...] [-n infile outfile ...]\n\
  -n, --newfile         write to new file\n\
    infile              original file in new file mode\n\
    outfile             output file in new file mode\n\
- -o, --oldfile         write to old file\n\
+ -o, --oldfile         write to old file (default)\n\
    file ...            files to convert in old file mode\n\
  -q, --quiet           quiet mode, suppress all warnings\n\
                        always on in stdio mode\n\
  -s, --safe            skip binary files (default)\n"),
  progname, VER_REVISION, VER_DATE, progname);
+#ifdef D2U_UNICODE
+  fprintf(stderr, _("\
+ -ul, --assume-utf16le Assume that the input format is UTF-16LE\n\
+ -ub, --assume-utf16be Assume that the input format is UTF-16BE\n"));
+#endif
 #ifdef S_ISLNK
   fprintf(stderr, _("\
  -F, --follow-symlink  follow symbolic links and convert the targets\n\
@@ -230,6 +237,7 @@ Usage: %s [options] [file ...] [-n infile outfile ...]\n\
  -V, --version         display version number\n"));
 }
 
+#define MINGW32_W64 1
 
 void PrintVersion(char *progname)
 {
@@ -239,24 +247,32 @@ void PrintVersion(char *progname)
 #endif
 #if defined(__WATCOMC__) && defined(__I86__)
   fprintf(stderr, "%s", _("DOS 16 bit version (WATCOMC).\n"));
-#elif defined(__TURBOC__)
+#elif defined(__TURBOC__) && defined(__MSDOS__)
   fprintf(stderr, "%s", _("DOS 16 bit version (TURBOC).\n"));
 #elif defined(__WATCOMC__) && defined(__DOS__)
   fprintf(stderr, "%s", _("DOS 32 bit version (WATCOMC).\n"));
-#elif defined(DJGPP)
+#elif defined(__DJGPP__)
   fprintf(stderr, "%s", _("DOS 32 bit version (DJGPP).\n"));
 #elif defined(__MSYS__)
   fprintf(stderr, "%s", _("MSYS version.\n"));
 #elif defined(__CYGWIN__)
   fprintf(stderr, "%s", _("Cygwin version.\n"));
-#elif defined(__WIN64__)
+#elif defined(__WIN64__) && defined(__MINGW64__)
   fprintf(stderr, "%s", _("Windows 64 bit version (MinGW-w64).\n"));
 #elif defined(__WATCOMC__) && defined(__NT__)
   fprintf(stderr, "%s", _("Windows 32 bit version (WATCOMC).\n"));
-#elif defined(__WIN32__)
+#elif defined(_WIN32) && defined(__MINGW32__) && (D2U_COMPILER == MINGW32_W64)
+  fprintf(stderr, "%s", _("Windows 32 bit version (MinGW-w64).\n"));
+#elif defined(_WIN32) && defined(__MINGW32__)
   fprintf(stderr, "%s", _("Windows 32 bit version (MinGW).\n"));
-#elif defined (__OS2__) /* OS/2 Warp */
-  fprintf(stderr, "%s", _("OS/2 version.\n"));
+#elif defined(_WIN64) && defined(_MSC_VER)
+  fprintf(stderr,_("Windows 64 bit version (MSVC %d).\n"),_MSC_VER);
+#elif defined(_WIN32) && defined(_MSC_VER)
+  fprintf(stderr,_("Windows 32 bit version (MSVC %d).\n"),_MSC_VER);
+#elif defined (__OS2__) && defined(__WATCOMC__) /* OS/2 Warp */
+  fprintf(stderr, "%s", _("OS/2 version (WATCOMC).\n"));
+#elif defined (__OS2__) && defined(__EMX__) /* OS/2 Warp */
+  fprintf(stderr, "%s", _("OS/2 version (EMX).\n"));
 #endif
 #ifdef D2U_UNICODE
   fprintf(stderr, "%s", _("With Unicode UTF-16 support.\n"));
@@ -296,7 +312,7 @@ FILE* OpenOutFile(int fd)
   return (fdopen(fd, W_CNTRL));
 }
 
-#if defined(__TURBOC__) || defined(__MSYS__)
+#if defined(__TURBOC__) || defined(__MSYS__) || defined(_MSC_VER)
 char *dirname(char *path)
 {
   char *ptr;
@@ -327,14 +343,14 @@ int MakeTempFileFrom(const char *OutFN, char **fname_ret)
 #else
   int fd = -1;
 #endif
-  
+
   *fname_ret = NULL;
 
   if (!cpy)
     goto make_failed;
-  
+
   dir = dirname(cpy);
-  
+
   fname_len = strlen(dir) + strlen("/d2utmpXXXXXX") + sizeof (char);
   if (!(fname_str = malloc(fname_len)))
     goto make_failed;
@@ -352,9 +368,9 @@ int MakeTempFileFrom(const char *OutFN, char **fname_ret)
   if ((fd = mkstemp(fname_str)) == -1)
     goto make_failed;
 #endif
-  
+
   return (fd);
-  
+
  make_failed:
   free(*fname_ret);
   *fname_ret = NULL;
@@ -587,46 +603,53 @@ wint_t d2u_putwc(wint_t wc, FILE *f, CFlag *ipFlag)
    {
       /* fprintf(stderr, "UTF-16 trail %x\n",wc); */
       trail = (wchar_t)wc; /* trail (low) surrogate */
-#if defined(WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
       /* On Windows (including Cygwin) wchar_t is 16 bit */
       /* We cannot decode an UTF-16 surrogate pair, because it will
          not fit in a 16 bit wchar_t. */
       wstr[0] = lead;
       wstr[1] = trail;
       wstr[2] = L'\0';
-#else      
+#else
       /* On Unix wchar_t is 32 bit */
       /* When we don't decode the UTF-16 surrogate pair, wcstombs() does not
        * produce the same UTF-8 as WideCharToMultiByte().  The UTF-8 output
        * produced by wcstombs() is bigger, because it just translates the wide
        * characters in the range 0xD800..0xDBFF individually to UTF-8 sequences
        * (although these code points are reserved for use only as surrogate
-       * pairs in UTF-16). Probably because on Unix the size of wide char
-       * (wchar_t) is 32 bit, wcstombs assumes the encoding is UTF-32, and
-       * ignores UTF-16 surrogates all together.  Some smart viewers can still
-       * display this UTF-8 correctly (like Total Commander lister), however
-       * the UTF-8 is not readable by Windows Notepad (on Windows 7).  When we
-       * decode the UTF-16 surrogate pairs ourselves the wcstombs() UTF-8
-       * output is identical to what WideCharToMultiByte() produces, and is
-       * readable by Notepad.
-       */ 
+       * pairs in UTF-16).
+       *
+       * Some smart viewers can still display this UTF-8 correctly (like Total
+       * Commander lister), however the UTF-8 is not readable by Windows
+       * Notepad (on Windows 7).  When we decode the UTF-16 surrogate pairs
+       * ourselves the wcstombs() UTF-8 output is identical to what
+       * WideCharToMultiByte() produces, and is readable by Notepad.
+       *
+       * Surrogate halves in UTF-8 are invalid. See also
+       * http://en.wikipedia.org/wiki/UTF-8#Invalid_code_points
+       * http://tools.ietf.org/html/rfc3629#page-5
+       * It is a bug in (some implemenatations of) wcstombs().
+       * On Cygwin 1.7 wcstombs() produces correct UTF-8 from UTF-16 surrogate pairs.
+       */
       /* Decode UTF-16 surrogate pair */
       wstr[0] = 0x10000;
       wstr[0] += (lead & 0x03FF) << 10;
       wstr[0] += (trail & 0x03FF);
       wstr[1] = L'\0';
+      /* fprintf(stderr, "UTF-32  %x\n",wstr[0]); */
 #endif
    } else {
       wstr[0] = (wchar_t)wc;
       wstr[1] = L'\0';
    }
 
-#if defined(WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
    /* On Windows we convert UTF-16 always to UTF-8 */
    len = (size_t)(WideCharToMultiByte(CP_UTF8, 0, wstr, -1, mbs, sizeof(mbs), NULL, NULL) -1);
 #else
    /* On Unix we convert UTF-16 to the locale encoding */
    len = wcstombs(mbs, wstr, sizeof(mbs));
+   /* fprintf(stderr, "len  %d\n",len); */
 #endif
 
    if ( len == (size_t)(-1) )

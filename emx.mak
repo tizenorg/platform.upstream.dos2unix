@@ -8,18 +8,18 @@ ENABLE_NLS=1
 LDFLAGS_EXTRA = -Zargs-wild
 
 ifdef ENABLE_NLS
-LDFLAGS_EXTRA += -lintl -liconv
+LIBS_EXTRA += -lintl -liconv
 endif
 ZIPOBJ_EXTRA =
 
 all:
-	$(MAKE) all EXE=.exe ENABLE_NLS=$(ENABLE_NLS) LDFLAGS_EXTRA="$(LDFLAGS_EXTRA)" prefix=$(prefix) LINK="cp -f" EO_XNOTATION=1 UCS=
+	$(MAKE) all EXE=.exe ENABLE_NLS=$(ENABLE_NLS) LDFLAGS_EXTRA="$(LDFLAGS_EXTRA)" LIBS_EXTRA="$(LIBS_EXTRA)" prefix=$(prefix) LINK="cp -f" EO_XNOTATION=1 UCS= MAN_NONLATIN=
 
 install:
-	$(MAKE) install EXE=.exe ENABLE_NLS=$(ENABLE_NLS) LDFLAGS_EXTRA="$(LDFLAGS_EXTRA)" prefix=$(prefix) LINK="cp -f" EO_XNOTATION=1 UCS=
+	$(MAKE) install EXE=.exe ENABLE_NLS=$(ENABLE_NLS) LDFLAGS_EXTRA="$(LDFLAGS_EXTRA)" LIBS_EXTRA="$(LIBS_EXTRA)" prefix=$(prefix) LINK="cp -f" EO_XNOTATION=1 UCS= MAN_NONLATIN=
 
 uninstall:
-	$(MAKE) uninstall EXE=.exe prefix=$(prefix)
+	$(MAKE) uninstall EXE=.exe prefix=$(prefix) MAN_NONLATIN=
 
 clean:
 	$(MAKE) clean EXE=.exe ENABLE_NLS=$(ENABLE_NLS) prefix=$(prefix)

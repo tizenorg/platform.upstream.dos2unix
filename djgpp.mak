@@ -3,24 +3,30 @@
 # Copyright (C) 2009-2012 Erwin Waterlander
 # This file is distributed under the same license as the dos2unix package.
 
-prefix=c:/djgpp
+include version.mk
+
+prefix=c:/dos32
 #ENABLE_NLS=1
 ENABLE_NLS=
 VERSIONSUFFIX=-dos32
 
 ifdef ENABLE_NLS
-LDFLAGS_EXTRA = -lintl -liconv
+LIBS_EXTRA = -lintl -liconv
+NLS_SUFFIX = -nls
 endif
+VERSIONSUFFIX = pm
+ZIPFILE = d2u$(DOS2UNIX_VERSION_SHORT)$(VERSIONSUFFIX)$(NLS_SUFFIX).zip
 ZIPOBJ_EXTRA = bin/cwsdpmi.exe
+docsubdir = dos2unix
 
 all:
-	$(MAKE) all EXE=.exe ENABLE_NLS=$(ENABLE_NLS) LDFLAGS_EXTRA="$(LDFLAGS_EXTRA)" prefix=$(prefix) LINK_MAN="cp -f" docsubdir=dos2unix EO_XNOTATION=1 UCS=
+	$(MAKE) all EXE=.exe ENABLE_NLS=$(ENABLE_NLS) LIBS_EXTRA="$(LIBS_EXTRA)" prefix=$(prefix) LINK_MAN="cp -f" docsubdir=$(docsubdir) EO_XNOTATION=1 UCS= MAN_NONLATIN=
 
 install:
-	$(MAKE) install EXE=.exe ENABLE_NLS=$(ENABLE_NLS) LDFLAGS_EXTRA="$(LDFLAGS_EXTRA)" prefix=$(prefix) LINK_MAN="cp -f" docsubdir=dos2unix EO_XNOTATION=1 UCS=
+	$(MAKE) install EXE=.exe ENABLE_NLS=$(ENABLE_NLS) LIBS_EXTRA="$(LIBS_EXTRA)" prefix=$(prefix) LINK_MAN="cp -f" docsubdir=$(docsubdir) EO_XNOTATION=1 UCS= MAN_NONLATIN=
 
 uninstall:
-	$(MAKE) uninstall EXE=.exe prefix=$(prefix) docsubdir=dos2unix
+	$(MAKE) uninstall EXE=.exe prefix=$(prefix) docsubdir=$(docsubdir) MAN_NONLATIN=
 
 clean:
 	$(MAKE) clean EXE=.exe ENABLE_NLS=$(ENABLE_NLS) prefix=$(prefix)
@@ -29,7 +35,7 @@ mostlyclean:
 	$(MAKE) mostlyclean EXE=.exe ENABLE_NLS=$(ENABLE_NLS) prefix=$(prefix)
 
 dist:
-	$(MAKE) dist-zip EXE=.exe prefix=$(prefix) VERSIONSUFFIX="$(VERSIONSUFFIX)" ZIPOBJ_EXTRA="${ZIPOBJ_EXTRA}" ENABLE_NLS=$(ENABLE_NLS) docsubdir=dos2unix
+	$(MAKE) dist-zip EXE=.exe prefix=$(prefix) VERSIONSUFFIX="$(VERSIONSUFFIX)" ZIPOBJ_EXTRA="${ZIPOBJ_EXTRA}" ENABLE_NLS=$(ENABLE_NLS) ZIPFILE=${ZIPFILE} docsubdir=$(docsubdir)
 
 strip:
 	$(MAKE) strip LINK_MAN="cp -f" EXE=.exe

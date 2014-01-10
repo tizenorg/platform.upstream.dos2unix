@@ -1,3 +1,169 @@
+2013-12-30 Erwin Waterlander <waterlan@xs4all.nl>
+	* Version 6.0.4
+	* man/nonlatin/man1/ru/dos2unix.pod: Removed. Russian
+	  translation of manual moved to later release.
+
+2013-11-26 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile, common.c: When MinGW-w64 is used for 32 bit, option
+	  -V prints (MinGW-w64) for used compiler name.
+
+2013-11-24 Erwin Waterlander <waterlan@xs4all.nl>
+	* mingw32.mak: New makefile for MinGW-w64 targeting win32.
+	  MinGW-w64 supports Large File Support (LFS) with
+	  -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 while mingw.org
+	  doesn't. Dos2unix failed when concurrent dos2unix processes
+	  processed huge files on Windows network share drives.
+	  Using MinGW-w64 with LFS support fixed the problem.
+	  Thanks to report by F.J. Brandelik.
+
+
+2013-10-07 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile: Set MAN_NONLATIN back to 1. Include non-Latin
+	  manuals in source package to prevent compilation troubles.
+	  Target 'clean' keeps non-Latin manuals. Use 'maintainer-clean'
+	  to erase them.
+
+2013-10-05 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile: By default don't build non-Latin1 manuals. There are
+	  still too many old perl/pod2man versions around (perl < 5.10.1).
+	  Add MAN_NONLATIN=1 to enable non-Latin1 manuals.
+
+2013-10-01 Erwin Waterlander <waterlan@xs4all.nl>
+	* man/man1/Makefile: Support non-Latin1 man pages.
+	* Makefile: Support non-Latin1 man pages.
+	* man/nonlatin/man1/ru/dos2unix.pod: Placeholder for Russian manual.
+
+2013-09-13 Андрей Углик (Andrei Uhlik) <uglika@gmail.com>
+	* po/ru.po: New Russian translation of the messages.
+
+2013-08-05 Erwin Waterlander <waterlan@xs4all.nl>
+	* po/de.po: Update German translations. Thanks to Lars Wendler.
+
+2013-06-14 Erwin Waterlander <waterlan@xs4all.nl>
+	* dos2unix.c/unix2dos.c: New options -ul and -ub to convert
+	  UTF-16 files without BOM.
+
+2013-06-11 Erwin Waterlander <waterlan@xs4all.nl>
+	* dos2unix.c/unix2dos.c: Print value of binary symbol
+	  when found.
+
+2013-03-12 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile: Set CC to gcc for MSYS target. Otherwise
+	  /mingw/bin/cc is used.
+
+2013-01-27 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile:
+	  - CC and CPP can be overridden by environment.
+	  - CFLAGS optimization flags can be overridden by environment.
+	  - Separate LIBS from LDFLAGS.
+	  Thanks to Justin Lecher <jlec@gentoo.org>
+
+2013-01-25 Erwin Waterlander <waterlan@xs4all.nl>
+	* Version 6.0.3
+
+2013-01-18 Erwin Waterlander <waterlan@xs4all.nl>
+	* dos2unix.c/unix2dos.c: Print system error when writing to
+	  temporary output file fails.
+
+2013-01-16 Erwin Waterlander <waterlan@xs4all.nl>
+	* dos2unix.c/unix2dos.c: Print system error when closing of
+	  temporary output file fails. E.g. "No space left on device".
+
+2012-12-25 Erwin Waterlander <waterlan@xs4all.nl>
+	* querycp.c/h: Added public domain phrase for Debian
+	  license check.
+
+2012-12-12 Erwin Waterlander <waterlan@xs4all.nl>
+	* test: New directory with some test files.
+
+2012-09-20 Erwin Waterlander <waterlan@xs4all.nl>
+	* man/man1/Makefile: Removed dependency on 'sed' program.
+
+2012-09-19 Erwin Waterlander <waterlan@xs4all.nl>
+	* vc.mak: Visual C++ version supports wildcard expansion.
+	  Added targets 'install', 'uninstall', 'doc', 'dist',
+	  'txt', 'html', and 'mostlyclean'.
+	* INSTALL.txt: Update for Visual C++.
+
+2012-09-16 Erwin Waterlander <waterlan@xs4all.nl>
+	* *.c/*.h: Dos2unix compiles with Microsoft Visual C++.
+	* vc.mak: New makefile for Microsoft Visual C++.
+	* INSTALL.txt: Update for Visual C++.
+
+2012-09-15 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile: Better check for DJGPP. DJGPP 2.04 uname returns "FreeDOS"
+	  on Freedos, 2.03 uname returns always "MS-DOS". Thanks to Rugxulo.
+	* man/man1/dos2unix.pod: Fixed a typo. Thanks to Jari Aalto.
+
+2012-09-06 Erwin Waterlander <waterlan@xs4all.nl>
+	* Version 6.0.2
+
+2012-08-29 Erwin Waterlander <waterlan@xs4all.nl>
+	* wcc*: Fix target 'dist' in Watcom makefiles.
+	* djgpp.mak: Use 8.3 filename for dos32 binary package.
+
+2012-08-26 Erwin Waterlander <waterlan@xs4all.nl>
+	* os2.mak: Renamed to emx.mak.
+	* wccos2.mak: New Watcom C makefile for OS/2 target.
+	* wcc.mif: Watcom C makefile with generic parts. This new
+	  makefile containts new targets 'install', 'uninstall',
+	  'doc', 'dist', and 'mostlyclean'.
+	* djgpp.mak: Default prefix is now c:\dos32
+	* dos16_gnu.mak: Removed. Installation of dos16 version is
+	  now done with Watcom makefiles.
+
+2012-08-13 Erwin Waterlander <waterlan@xs4all.nl>
+	* po/de.po: Update German translations. Thanks to Philipp.
+	* po/es.po: Update Spanish translations. Thanks to Julio.
+
+2012-08-12 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile: Don't use pod2text option --utf8. There are too many
+	  old pod2text versions around that don't support this option.
+	* Makefile: Install PDF and PostScript files of all languages when
+	  they have been created.
+	* po/eo*.po: Update Esperanto translations. Thanks to Rugxulo.
+	* dos2unix/unix2dos: Don't use __MSDOS__ macro for Windows.
+
+2012-08-10 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile: Change variable OS to D2U_OS. OS is used by Windows.
+	* Makefile: By default install only English text and html manuals.
+	  This saves a dependency on iconv. Non-English text and html manuals
+	  will be installed when they have been explicitly generated with
+	  targets 'txt' and 'html'.
+
+2012-08-09 Erwin Waterlander <waterlan@xs4all.nl>
+	* dos2unix/unix2dos: Use only C99 compliant predefined macros.
+
+2012-08-07 Erwin Waterlander <waterlan@xs4all.nl>
+	* dos2unix/unix2dos: Print line number when a binary symbol is found.
+	  Thanks to Somsak Pattanaprateep.
+	* Makefile: By default install text and html manuals of all languages.
+
+2012-08-06 Erwin Waterlander <waterlan@xs4all.nl>
+	* dos2unix/unix2dos: Fix. Locale encoding was not detected when NLS
+	  was disabled.
+	* common.c: Update comments. Surrogate halves in UTF-8 are invalid.
+
+2012-07-25 Erwin Waterlander <waterlan@xs4all.nl>
+	* Version 6.0.1
+
+2012-07-20 Erwin Waterlander <waterlan@xs4all.nl>
+	* Makefile: Target 'html' makes also Dutch and Spanish HTML manuals.
+
+2012-07-18 Erwin Waterlander <waterlan@xs4all.nl>
+	* manual: Update for options -n and -o. Describe the new permissions of
+	  the output file in new-file and old-file mode.
+	* README.txt: Added references for the findutils package for Windows
+	  and DOS to enable recursive conversions on those platforms.
+
+2012-05-20 Erwin Waterlander <waterlan@xs4all.nl>
+	* common.h: Fix compiler warnings "implicit declaration of function
+	  'strcasecmp'". Thanks to Michael Schindler
+	  <k-m_schindler@sourceforge.net>.
+
+2012-05-11 Julio A. Freyre-Gonzalez <jfreyreg@gmail.com>
+	* Update Spanish messages and manual.
+
 2012-05-06 Erwin Waterlander <waterlan@xs4all.nl>
 	* Version 6.0
 	* man/*/man1/*.pod: Removed =encoding. It is not supported
@@ -371,7 +537,7 @@
 	  to Mac line endings.
 
 2010-02-10 Erwin Waterlander <waterlan@xs4all.nl>
-	* unix2dos: Makefile : 
+	* unix2dos: Makefile :
 	  - Use GNU standard directory variables everywhere.
 	  - New target 'dist-tbz' creates bzip2 compressed archive.
 
@@ -383,7 +549,7 @@
 	    this is more common practice).
 
 2010-02-03 Erwin Waterlander <waterlan@xs4all.nl>
-	* dos2unix: Makefile : 
+	* dos2unix: Makefile :
 	  - Use GNU standard directory variables everywhere.
 
 2010-02-03 Philipp Thomas <psmt@opensuse.org>
@@ -463,7 +629,7 @@
 	* dos2unix/unix2dos: Makefile: Makefile according GNU standards.
 	* unix2dos: INSTALL: New file.
 	* dos2unix: Applied all patches from RedHat:
-	  - use mkstemp i.s.o. mktemp: Nov 17 2000 Tim Powers <timp@redhat.com> 
+	  - use mkstemp i.s.o. mktemp: Nov 17 2000 Tim Powers <timp@redhat.com>
 	  - segfault: Jan 17 2002 Bernhard Rosenkraenzer <bero@redhat.com>
 	  - safeconv: Oct 20 2004 Miloslav Trmac <mitr@redhat.com>
 	  - manpage-update: Oct  6 2004 Mike A. Harris <mharris@redhat.com>
@@ -472,12 +638,12 @@
 	  - c-missing-arg: Jan 18 2008 Tim Waugh <twaugh@redhat.com>
 	  - Remove trailing white space.
 	* unix2dos: Applied all patches from RedHat:
-	  - use mkstemp i.s.o. mktemp: Nov 17 2000 Tim Powers <timp@redhat.com> 
+	  - use mkstemp i.s.o. mktemp: Nov 17 2000 Tim Powers <timp@redhat.com>
 	  - segfault: Jan 17 2002 Bernhard Rosenkraenzer <bero@redhat.com>
 	  - manpage-update: Oct  6 2004 Mike A. Harris <mharris@redhat.com>
 	  - preserve-file-modes: Oct 11 2004 Tim Waugh <twaugh@redhat.com>
 	  - tmppath: Apr 13 2005 Tim Waugh <twaugh@redhat.com>
-	  - Remove trailing white space. 
+	  - Remove trailing white space.
 
 1998-11-19 Christian Wurll <wurll@ira.uka.de>
 	* dos2unix: version 3.1
