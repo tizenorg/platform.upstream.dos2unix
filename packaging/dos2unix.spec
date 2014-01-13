@@ -1,16 +1,16 @@
 Name:           dos2unix
-Version:        6.0
+Version:        6.0.4
 Release:        0
 License:        BSD-3-Clause
 Summary:        Text converters to and from DOS/MAC to UNIX
 Url:            http://waterlan.home.xs4all.nl/dos2unix.html
-Group:          Productivity/Text/Convertors
+Group:          System/Utilities
 Source:         http://waterlan.home.xs4all.nl/dos2unix/dos2unix-%{version}.tar.gz
-Source1001: 	dos2unix.manifest
+Source1001:     dos2unix.manifest
 BuildRequires:  gettext-tools
+BuildRequires:  perl
 Provides:       unix2dos = %{version}
 Obsoletes:      unix2dos < %{version}
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
 Dos2unix is used to convert plain text from DOS (CR/LF) format. Mac2unix
@@ -29,10 +29,10 @@ export RPM_OPT_FLAGS
 make %{?_smp_mflags} CC="gcc" HTMLEXT="html"
 
 %install
-%make_install docdir=%{_defaultdocdir}/%{name}
-%{find_lang} dos2unix --all-name --with-man
+%make_install
+%{find_lang} %{name} --all-name --with-man
 
-%files -f dos2unix.lang
+%files -f %{name}.lang
 %manifest %{name}.manifest
 %defattr(-,root,root,0755)
 %doc /usr/share/doc/%{name}-%{version}
@@ -40,8 +40,7 @@ make %{?_smp_mflags} CC="gcc" HTMLEXT="html"
 %{_bindir}/mac2unix
 %{_bindir}/unix2mac
 %{_bindir}/unix2dos
-%doc %{_mandir}/*/dos2unix.1*
-%doc %{_mandir}/*/mac2unix.1*
-%doc %{_mandir}/*/unix2mac.1*
-%doc %{_mandir}/*/unix2dos.1*
-%doc %lang(nl) %dir %{_mandir}/nl
+%{_mandir}/man1/dos2unix.1.gz
+%{_mandir}/man1/mac2unix.1.gz
+%{_mandir}/man1/unix2dos.1.gz
+%{_mandir}/man1/unix2mac.1.gz
